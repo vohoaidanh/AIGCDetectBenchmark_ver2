@@ -4,15 +4,12 @@ import random
 
 from PIL import Image
 import blobfile as bf
-from mpi4py import MPI
+#from mpi4py import MPI
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
-import sys
-from . import logger
-from io import BytesIO
-from scipy.ndimage import gaussian_filter
-import torchvision
+from guided_diffusion import logger
+
 
 def load_data_for_reverse(
     *,
@@ -23,7 +20,6 @@ def load_data_for_reverse(
     deterministic=True,
     random_crop=False,
     random_flip=False,
-    noise_type=None
 ):
     """
     For a dataset, create a generator over (images, kwargs) pairs.
@@ -45,40 +41,45 @@ def load_data_for_reverse(
     """
     if not data_dir:
         raise ValueError("unspecified data directory")
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        all_files = _list_image_files_recursively(data_dir)
-
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        MPI.COMM_WORLD.bcast(all_files)
-    else:
-        all_files = MPI.COMM_WORLD.bcast(None)
-
+# =============================================================================
+#     if MPI.COMM_WORLD.Get_rank() == 0:
+#         all_files = _list_image_files_recursively(data_dir)
+# 
+#     if MPI.COMM_WORLD.Get_rank() == 0:
+#         MPI.COMM_WORLD.bcast(all_files)
+#     else:
+#         all_files = MPI.COMM_WORLD.bcast(None)
+# =============================================================================
+    
+    all_files = _list_image_files_recursively(data_dir)
+    print('We have :', len(all_files), ' images')
     classes = None
     if class_cond:
         # Assume classes are the first part of the filename,
         # before an underscore.
         class_names = [bf.basename(path).split("_")[0] for path in all_files]  # 标签_文件名
-        # print(class_names)
-        # quit()
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
     dataset = ImageDataset_for_reverse(
         image_size,
         all_files,
         classes=classes,
-        shard=MPI.COMM_WORLD.Get_rank(),
-        num_shards=MPI.COMM_WORLD.Get_size(),
+        shard=0,                 #MPI.COMM_WORLD.Get_rank(),
+        num_shards=1,            #MPI.COMM_WORLD.Get_size(),
         random_crop=random_crop,
         random_flip=random_flip,
-        noise_type=noise_type
     )
-    logger.log("dataset length: {}".format(dataset.__len__() * MPI.COMM_WORLD.size))
-    if deterministic:
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=False)
-    else:
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True)
-    while True:
-        yield from loader
+    logger.log("dataset length: {}".format(dataset.__len__() * 1))
+    return  DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
+    
+# =============================================================================
+#     if deterministic:
+#         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=False)
+#     else:
+#         loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True)
+#     while True:
+#         yield from loader
+# =============================================================================
 
 
 def load_data(
@@ -123,8 +124,8 @@ def load_data(
         image_size,
         all_files,
         classes=classes,
-        shard=MPI.COMM_WORLD.Get_rank(),
-        num_shards=MPI.COMM_WORLD.Get_size(),
+        shard=0,                        #MPI.COMM_WORLD.Get_rank(),
+        num_shards=1,                   #MPI.COMM_WORLD.Get_size(),
         random_crop=random_crop,
         random_flip=random_flip,
     )
@@ -141,26 +142,13 @@ def _list_image_files_recursively(data_dir):
     for entry in sorted(bf.listdir(data_dir)):
         full_path = bf.join(data_dir, entry)
         ext = entry.split(".")[-1]
-        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif","PNG","JPEG"]:
+        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif", "webp"]:
             results.append(full_path)
         elif bf.isdir(full_path):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
-def pil_jpg_eval(img, compress_val):
-    out = BytesIO()
-    img.save(out, format='jpeg', quality=compress_val)
-    img = Image.open(out)
-    img = np.array(img)
-    img = Image.fromarray(img)
-    out.close()
-    return img
 
-def gaussian_blur(img, sigma):
-    gaussian_filter(img[:,:,0], output=img[:,:,0], sigma=sigma)
-    gaussian_filter(img[:,:,1], output=img[:,:,1], sigma=sigma)
-    gaussian_filter(img[:,:,2], output=img[:,:,2], sigma=sigma)
-    
 class ImageDataset_for_reverse(Dataset):
     def __init__(
         self,
@@ -171,7 +159,6 @@ class ImageDataset_for_reverse(Dataset):
         num_shards=1,
         random_crop=False,
         random_flip=True,
-        noise_type=None
     ):
         super().__init__()
         self.resolution = resolution
@@ -179,42 +166,16 @@ class ImageDataset_for_reverse(Dataset):
         self.local_classes = None if classes is None else classes[shard:][::num_shards]
         self.random_crop = random_crop
         self.random_flip = random_flip
-        self.noise_type=noise_type
 
     def __len__(self):
         return len(self.local_images)
 
     def __getitem__(self, idx):
         path = self.local_images[idx]
-    
         with bf.BlobFile(path, "rb") as f:
             pil_image = Image.open(f)
             pil_image.load()
-
         pil_image = pil_image.convert("RGB")
-        height,weight=pil_image.size
-
-   
-
-        
-        #这里是新加入的对图像的预处理
-        if self.noise_type == 'jpg':
-            # print('jpg')
-            # quit()
-            pil_image = pil_jpg_eval(pil_image,95)
-        elif self.noise_type == 'resize':
-           
-            # self.resolution=int(self.resolution/2)
-            pil_image = torchvision.transforms.Resize((int(height/2),int(weight/2)))(pil_image) #可以改成缩放多少倍，因为图像质量各不相同
-            height,weight=pil_image.size
-            
-
-        elif self.noise_type == 'blur':
-            # print('blur')
-            pil_image = np.array(pil_image)
-            gaussian_blur(pil_image, 1)
-            pil_image =  Image.fromarray(pil_image)
-
 
         if self.random_crop:
             arr = random_crop_arr(pil_image, self.resolution)
