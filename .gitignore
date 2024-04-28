@@ -1,0 +1,11 @@
+__pycache__/
+checkpoints/
+data/__pycache__/
+networks/__pycache__/
+options/__pycache__/
+.spyproject/
+mydataset/
+*.jpg
+*.jpeg
+*.png
+*.webp
