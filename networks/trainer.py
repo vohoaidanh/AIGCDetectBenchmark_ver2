@@ -64,6 +64,11 @@ class Trainer(BaseModel):
             self.cropped_img = input[1].to(self.device)
             self.label = input[2].to(self.device).float() #(batch_size)
             self.scale = input[3].to(self.device).float()
+            
+        elif self.opt.detect_method == "Combine":
+            self.input = input[0].to(self.device)
+            self.input2 = input[1].to(self.device)
+            self.label = input[2].to(self.device).float() #(batch_size)
         else:
             self.input = input[0].to(self.device)
             self.label = input[1].to(self.device).float()
@@ -75,6 +80,8 @@ class Trainer(BaseModel):
         elif self.opt.detect_method == "UnivFD":
             self.output = self.model(self.input)
             self.output = self.output.view(-1).unsqueeze(1)
+        elif self.opt.detect_method == "Combine":
+            self.output = self.model(self.input, self.input2)
         else: 
             self.output = self.model(self.input)
 

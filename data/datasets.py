@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -124,10 +125,11 @@ class read_data_combine():
     def __init__(self, opt):
         opt1 = copy.deepcopy(opt)
         opt1.detect_method = opt.method_combine.split('+')[0]
-        
-            
+        #get the current split [train, val, test]
+        split = os.path.basename(opt.dataroot.rstrip('/'))
+
         opt2 = copy.deepcopy(opt)
-        opt2.dataroot = '{}/{}/'.format(opt.dataroot2, opt.train_split)
+        opt2.dataroot = '{}/{}/'.format(opt.dataroot2, split)
         opt2.detect_method = opt.method_combine.split('+')[-1]
         
         if opt2.detect_method == 'FreDect':
@@ -139,7 +141,7 @@ class read_data_combine():
            
         # Ensure that the number of samples in both datasets are the same
         assert len(self.dataset1) == len(self.dataset2), \
-            "Number of samples in both datasets must be the same."
+            f"Number of samples in both datasets must be the same.{len(self.dataset1)} != {len(self.dataset2)}"
 
     def __len__(self):
         return len(self.dataset1)

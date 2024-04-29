@@ -67,6 +67,22 @@ def validate_single(model, opt):
     ap = average_precision_score(y_true, y_pred)
     return acc, ap, r_acc, f_acc, y_true, y_pred
 
+def validate_combine(model, data_loader):
+    with torch.no_grad():
+        i = 0
+        y_true, y_pred = [], []
+    
+        for img, img2 , label in data_loader:
+            i += 1
+            print("batch number {}/{}".format(i, len(data_loader)), end='\r')
+            in_tens = img.cuda()
+            in_tens2 = img2.cuda()
+            # label = label.cuda()
+            y_pred.extend(model(in_tens, in_tens2).sigmoid().flatten().tolist())
+            y_true.extend(label.flatten().tolist())
+
+    return y_true, y_pred
+
 
 def validate(model, opt):
     
@@ -76,6 +92,9 @@ def validate(model, opt):
     y_true, y_pred = [], []
     if opt.detect_method == "Fusing":
         y_true, y_pred = validate_PSM(model, data_loader)
+        
+    elif opt.detect_method == "Combine":
+        y_true, y_pred = validate_combine(model, data_loader)
     else:
         # with torch.no_grad():
         i = 0

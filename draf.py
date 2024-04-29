@@ -35,7 +35,7 @@ from data import create_dataloader_new,create_dataloader
 opt = TrainOptions().parse()
 opt.dataroot = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
 opt.dataroot2 = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
-opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.train_split)
+opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.val_split)
 opt.batch_size = 1
 opt.method_combine = 'CNNSpot+FreDect'
 
@@ -63,6 +63,7 @@ model = resnet50_combine(pretrained=True, num_classes=1, checkpoint1='resnet50',
 
 
 
-
+assert len([1,2,3]) == len([4,5,6, 7]), \
+    "Number of samples in both datasets must be the same."
 
 
