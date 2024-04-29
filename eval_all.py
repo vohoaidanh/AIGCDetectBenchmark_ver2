@@ -11,7 +11,10 @@ from options import TestOptions
 from eval_config import *
 from PIL import ImageFile
 from util import create_argparser,get_model, set_random_seed
-
+from sklearn.metrics import accuracy_score, confusion_matrix
+################################################################
+from datetime import datetime
+dt = datetime.now().strftime("%Y%m%d%H%M%S")
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -23,7 +26,24 @@ set_random_seed()
 
 opt = TestOptions().parse(print_options=True) #获取参数类
 
-
+if opt.comet:
+    ######################################################################
+    comet_params = {
+        'CropSize': opt.CropSize,
+        'batch_size':opt.batch_size,
+        'detect_method':opt.detect_method,
+        'noise_type': 'None',
+        'model_path': opt.model_path,
+        'jpg_qual': opt.jpg_qual,
+        'name': 'Run test set with ...'
+        }
+    
+    comet_ml.init(api_key='MS89D8M6skI3vIQQvamYwDgEc')
+    experiment = comet_ml.Experiment(
+            project_name="ai-generated-image-detection"
+        )
+    experiment.log_parameter('Cross_test params', comet_params)
+    ######################################################################
 
 model_name = os.path.basename(opt.model_path).replace('.pth', '')
 results_dir=f"./results/{opt.detect_method}"
@@ -44,7 +64,8 @@ for v_id, val in enumerate(vals):
     try:
         if opt.detect_method in ["FreDect","Gram"]:
             try:
-                model.load_state_dict(state_dict['netC'], strict=True)
+                model.load_state_dict(state_dict['model'],strict=True)
+                #model.load_state_dict(state_dict['netC'], strict=True)
             except:
                 model.load_state_dict({k.replace('module.', ''): v for k, v in state_dict['netC'].items()})
         elif opt.detect_method == "UnivFD":
@@ -58,11 +79,25 @@ for v_id, val in enumerate(vals):
 
 
     opt.process_device = torch.device("cpu")
-    acc, ap, r_acc, f_acc ,_, _ = validate(model, opt)
-    rows.append([val, acc, ap, r_acc, f_acc])
-    print("({}) acc: {}; ap: {};  r_acc: {}, f_acc: {}".format(val, acc, ap, r_acc, f_acc))
 
-
+    acc, ap, conf_mat  = validate(model, opt)[:3]
+    rows.append([val, acc, ap, conf_mat])    
+    TP = conf_mat[1, 1]
+    TN = conf_mat[0, 0]
+    FP = conf_mat[0, 1]
+    FN = conf_mat[1, 0]
+    
+    TPR = TP / (TP + FN)
+    TNR = TN / (TN + FP)
+    
+    print("Evaluation: acc: {}; ap: {}; TPR: {}; TNR: {}".format(acc, ap, TPR, TNR))
+    
+    if opt.comet:
+        experiment.log_metric('corsstest/acc', acc)
+        file_name = "eval_{}_{}.json".format(val, dt)
+        experiment.log_confusion_matrix(matrix = conf_mat, file_name=file_name)
+if opt.comet:
+    experiment.end()
 # 结果文件
 csv_name = results_dir + '/{}_{}.csv'.format(opt.detect_method,opt.noise_type)
 with open(csv_name, 'a+') as f:

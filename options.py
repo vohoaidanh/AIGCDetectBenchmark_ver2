@@ -54,6 +54,12 @@ class TrainOptions():
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         parser.add_argument('--weight_decay', type=float, default=0.0, help='loss weight for l2 reg')
         parser.add_argument('--comet', action='store_true', help='This option for comet loger')
+        parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
+        
+        parser.add_argument('--method_combine', type=str,default=None, help='example combine CNNSpot+FreDect')
+        parser.add_argument('--dataroot2', default=None, help='root for Second  dataset')
+
+
 
         return parser
     def gather_options(self):
@@ -155,6 +161,7 @@ class TestOptions():
         parser.add_argument('--DIRE_modelpath',type=str,default='./weights/preprocessing/lsun_bedroom.pt',help='the path of DIRE pre-trained model')
         parser.add_argument('--LGrad_modelpath', type=str,default='./weights/preprocessing/karras2019stylegan-bedrooms-256x256_discriminator.pth', help='the path of LGrad pre-trained model')
         parser.add_argument('--comet', action='store_true', help='This option for comet loger')
+        parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
 
         self.initialized = True
 

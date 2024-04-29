@@ -52,7 +52,7 @@ if __name__ == '__main__':
     if opt.comet:
         comet_ml.init(api_key='MS89D8M6skI3vIQQvamYwDgEc')
         comet_train_params = {
-            'CropSize': opt.cropSize,
+            'CropSize': opt.CropSize,
             'batch_size':opt.batch_size,
             'detect_method':opt.detect_method,
             'earlystop_epoch':opt.earlystop_epoch,
@@ -105,7 +105,8 @@ if __name__ == '__main__':
             # Get loss, and acc of step
             y_pred.extend(model.output.sigmoid().flatten().tolist())
             y_true.extend(model.label.flatten().tolist())
-            
+            loss.append(model.loss.cpu().detach().numpy())
+
             if model.total_steps % opt.loss_freq == 0:
                 print("Train loss: {} at step: {}".format(model.loss, model.total_steps))
                 train_writer.add_scalar('loss', model.loss, model.total_steps)

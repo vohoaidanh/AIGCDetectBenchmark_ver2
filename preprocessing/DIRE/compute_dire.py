@@ -65,7 +65,11 @@ def main():
     model.eval()
 
     data = load_data_for_reverse(
-        data_dir=args.images_dir, batch_size=args.batch_size, image_size=args.image_size, class_cond=args.class_cond
+        data_dir=args.images_dir, 
+        batch_size=args.batch_size, 
+        image_size=args.image_size, 
+        class_cond=args.class_cond, 
+        num_workers = 4
     )
 
     logger.log("have created data loader")
@@ -174,6 +178,7 @@ def create_argparser():
         real_step=0,
         continue_reverse=False,
         has_subfolder=False,
+        num_workers=4,
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

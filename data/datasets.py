@@ -3,6 +3,8 @@ import numpy as np
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
+from torch.utils.data import Dataset
+
 from random import random, choice
 from io import BytesIO
 from PIL import Image
@@ -16,6 +18,7 @@ from scipy import fftpack
 import imageio
 from skimage.transform import resize
 from .process import *
+import copy
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -70,7 +73,87 @@ class FileNameDataset(datasets.ImageFolder):
         path, target = self.samples[index]
         return path
 
+##############################################################################
+class read_data_custom():
+    def __init__(self, opt):
+        self.opt = opt
+        self.root = opt.dataroot
+        real_img_list = loadpathslist(self.root,'0_real')    
+        real_label_list = [0 for _ in range(len(real_img_list))]
+        fake_img_list = loadpathslist(self.root,'1_fake')
+        fake_label_list = [1 for _ in range(len(fake_img_list))]
+        self.img = real_img_list+fake_img_list
+        self.label = real_label_list+fake_label_list
 
+        # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
+
+
+    def __getitem__(self, index):
+        img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
+        imgname = self.img[index]
+        
+        #Image 2
+        idx2 = index
+        while(idx2 == index):
+            idx2 = choice(range(len(self.real_img_list)))
+        
+        img2 = Image.open(self.img[idx2]).convert('RGB')
+        # compute scaling
+        
+        height, width = img.height, img.width
+        if (not self.opt.isTrain) and (not self.opt.isVal):
+            img = custom_augment(img, self.opt)
+            img2 = custom_augment(img2, self.opt)
+
+        img = processing(img,self.opt,'imagenet')
+        img2 = processing(img2,self.opt,'imagenet')
+        
+        return img, img2, target
+
+    def __len__(self):
+        return len(self.label)
+    
+class read_data_combine():
+    """
+    root1, root2: should be a full_path with slip set like
+    D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train
+    Note! if root1 != root2, the dataset filename coressponing should be the same
+    
+    """
+    
+    def __init__(self, opt):
+        opt1 = copy.deepcopy(opt)
+        opt1.detect_method = opt.method_combine.split('+')[0]
+        
+            
+        opt2 = copy.deepcopy(opt)
+        opt2.dataroot = '{}/{}/'.format(opt.dataroot2, opt.train_split)
+        opt2.detect_method = opt.method_combine.split('+')[-1]
+        
+        if opt2.detect_method == 'FreDect':
+            opt2.dct_mean = torch.load('./weights/auxiliary/dct_mean').permute(1,2,0).numpy()
+            opt2.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
+        
+        self.dataset1 = read_data(opt=opt1)
+        self.dataset2 = read_data(opt=opt2)
+           
+        # Ensure that the number of samples in both datasets are the same
+        assert len(self.dataset1) == len(self.dataset2), \
+            "Number of samples in both datasets must be the same."
+
+    def __len__(self):
+        return len(self.dataset1)
+
+    def __getitem__(self, idx):
+        # Load samples from both datasets at the same index
+        img1, label = self.dataset1.__getitem__(idx)
+        img2, _ = self.dataset2.__getitem__(idx)
+
+        # Return images and labels
+        return img1, img2, label
+
+    
+##############################################################################
 
 
 rz_dict = {'bilinear': Image.BILINEAR,
@@ -149,9 +232,7 @@ def process_img(img,opt,imgname,target):
     return img, target
     
 
-
-
-class read_data_new():
+class read_data():
     def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
@@ -202,3 +283,10 @@ class read_data_new():
 
     def __len__(self):
         return len(self.label)
+
+def read_data_new(opt):
+    if opt.method_combine is not None:
+        return read_data_combine(opt)
+    else:
+        return read_data(opt)
+    

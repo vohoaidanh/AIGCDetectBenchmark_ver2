@@ -20,6 +20,8 @@ from preprocessing_model.guided_diffusion.script_util import (
     add_dict_to_argparser,
     args_to_dict,
 )
+###############################################################################
+from networks.resnet_combine import resnet50_combine
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -106,6 +108,23 @@ def get_model(opt):
         if opt.isTrain:
             torch.nn.init.normal_(model.fc.weight.data, 0.0, opt.init_gain) 
         return model
-
+    elif opt.detect_method == "Combine":
+        if opt.isTrain:
+            model = resnet50_combine(pretrained=True, num_classes=1, checkpoint1='resnet50', checkpoint2='resnet50')
+            return model
+        else:
+            return resnet50_combine(pretrained=False, num_classes=1)
+        
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
