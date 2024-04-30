@@ -72,7 +72,7 @@ def validate_combine(model, data_loader):
         i = 0
         y_true, y_pred = [], []
     
-        for img, img2 , label in data_loader:
+        for img, img2 ,label in data_loader:
             i += 1
             print("batch number {}/{}".format(i, len(data_loader)), end='\r')
             in_tens = img.cuda()

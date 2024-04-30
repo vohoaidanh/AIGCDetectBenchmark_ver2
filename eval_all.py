@@ -4,6 +4,8 @@ python eval_all.py --model_path ./weights/{}.pth --detect_method {CNNSpot,Gram,F
 
 import os
 import csv
+import comet_ml
+
 import torch
 
 from validate import validate,validate_single

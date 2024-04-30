@@ -154,6 +154,109 @@ class read_data_combine():
         # Return images and labels
         return img1, img2, label
 
+class read_data_cnnspot_fredect():
+    def __init__(self, opt):
+        self.opt = opt
+        self.root = opt.dataroot
+        real_img_list = loadpathslist(self.root,'0_real')    
+        real_label_list = [0 for _ in range(len(real_img_list))]
+        fake_img_list = loadpathslist(self.root,'1_fake')
+        fake_label_list = [1 for _ in range(len(fake_img_list))]
+        self.img = real_img_list+fake_img_list
+        self.label = real_label_list+fake_label_list
+
+        # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
+
+
+    def __getitem__(self, index):
+        img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
+        img2 = copy.deepcopy(img)
+        imgname = self.img[index]
+        # compute scaling
+        height, width = img.height, img.width
+        if (not self.opt.isTrain) and (not self.opt.isVal):
+            img = custom_augment(img, self.opt)
+            img2 = custom_augment(img2, self.opt)
+
+        
+        
+        img = processing(img,self.opt,'imagenet')
+        img2 = processing_DCT(img2,self.opt)
+        
+
+        return img, img2, target
+
+    def __len__(self):
+        return len(self.label)    
+
+
+class shading_dataset(Dataset):
+    """Face Landmarks dataset."""
+
+    def __init__(self, opt, rgb_dir='rgb', shading_dir = 'shading' ):
+        """
+        Parameters
+        ----------
+        opt : TYPE
+            DESCRIPTION.
+        split : [train, test, val]
+            DESCRIPTION. The default is 'train'.
+        rgb_dir : dir of RGB images
+            DESCRIPTION. The default is 'rgb'.
+        shading_dir : dir of shading images
+            DESCRIPTION. The default is 'shading'.
+
+        Returns Dataset
+        -------
+
+        """
+        self.opt = opt
+        self.root = os.path.dirname(opt.dataroot.rstrip('/'))
+        self.rgb_dir = rgb_dir
+        self.shading_dir = shading_dir
+        self.split = os.path.basename(opt.dataroot.rstrip('/'))
+        
+        real_rgb_name = os.listdir(os.path.join(self.root, self.rgb_dir, self.split, '0_real'))
+        real_label_list = [0 for _ in range(len(real_rgb_name))]
+        
+        real_rgb_list = [os.path.join(self.root, self.rgb_dir, self.split, '0_real',i) \
+                         for i in real_rgb_name if i.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+            
+        fake_rgb_name = os.listdir(os.path.join(self.root, self.rgb_dir, self.split, '1_fake'))
+        fake_rgb_list = [os.path.join(self.root, self.rgb_dir, self.split, '1_fake',i) \
+                         for i in fake_rgb_name if i.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]        
+        
+        
+        fake_label_list = [1 for _ in range(len(fake_rgb_name))]
+                    
+        self.input = real_rgb_list + fake_rgb_list
+        self.shading = [i.replace(self.rgb_dir, self.shading_dir) for i in self.input]
+        self.labels = real_label_list + fake_label_list
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+        if (not self.opt.isTrain) and (not self.opt.isVal):
+            rgb = custom_augment(rgb, self.opt)
+            shading = custom_augment(shading, self.opt)
+            
+        rgb  = Image.open(self.input[idx]).convert('RGB')
+        shading = Image.open(self.shading[idx]).convert('RGB')
+        
+        target  = self.labels[idx]
+        
+        #if self.opt.detect_method.lower() in ['shading']:
+        rgb = processing(rgb,self.opt,'imagenet')
+        shading = processing(shading,self.opt,'imagenet')
+            
+        #else:
+            #raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
+        
+        return rgb, shading, target
     
 ##############################################################################
 
@@ -288,7 +391,12 @@ class read_data():
 
 def read_data_new(opt):
     if opt.method_combine is not None:
-        return read_data_combine(opt)
+        if 'shading' in opt.method_combine.lower():
+            return shading_dataset(opt)
+        if 'fredect' in opt.method_combine.lower():
+            opt.dct_mean = torch.load('./weights/auxiliary/dct_mean').permute(1,2,0).numpy()
+            opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
+            return read_data_cnnspot_fredect(opt)
     else:
         return read_data(opt)
     
