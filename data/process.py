@@ -437,3 +437,18 @@ def ED(img):
     s4 = torch.sum(torch.abs(r7 - r8)).item() 
     return s1+s2+s3+s4
 
+
+def create_mask(img, shading, thres=128, background=False):
+    new_size = img.size
+    im_sd = shading.resize(new_size)
+    im_sd = im_sd.convert('L')
+    if background:
+        im_sd = im_sd.point(lambda x: 0 if x > thres else 1)
+    else:
+        im_sd = im_sd.point(lambda x: 1 if x > thres else 0)
+    im_sd_arr = np.array(im_sd)
+    im_sd_arr = np.expand_dims(im_sd_arr, axis=2)
+    im_sd_arr = np.repeat(im_sd_arr, 3, axis=2)
+    img_arr = np.array(img)
+    mask = Image.fromarray(img_arr * im_sd_arr)
+    return mask

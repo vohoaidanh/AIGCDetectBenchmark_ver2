@@ -113,7 +113,7 @@ def get_model(opt):
             model = resnet50_combine(pretrained=True, num_classes=1, checkpoint1='resnet50', checkpoint2='resnet50')
             return model
         else:
-            return resnet50_combine(pretrained=False, num_classes=1,checkpoint1='', checkpoint1='')
+            return resnet50_combine(pretrained=False, num_classes=1,checkpoint1='', checkpoint2='')
         
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")

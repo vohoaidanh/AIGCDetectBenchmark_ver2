@@ -67,3 +67,91 @@ assert len([1,2,3]) == len([4,5,6, 7]), \
     "Number of samples in both datasets must be the same."
 
 
+
+
+import os
+os.path.basename('dasd/fsdf/afsd/fsdf.jpg')
+
+
+
+assert 'a' == 'b', "hello"
+
+
+from networks.contrastive_resnet.resnet_contrastive import SupConResNet
+import torch
+from networks.contrastive_resnet.losses import SupConLoss
+
+import torchvision.transforms as transforms
+from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize the image to a fixed size
+    transforms.ToTensor(),           # Convert the image to a PyTorch tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the image
+])
+
+dataset = ImageFolder(root=r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset', transform=transform)
+test_loader = DataLoader(dataset, batch_size=3, shuffle=True)
+
+
+#with torch.no_grad():
+model = SupConResNet(head='linear', feat_dim=2)
+
+   
+criterion_model = SupConLoss(temperature=0.001, contrast_mode='one')
+
+features[1] = torch.tensor([100.0,0.0])
+
+for images, labels in test_loader:
+    features = model(images)
+    features = features.unsqueeze(1) 
+    loss = criterion_model(features)
+    print(loss.item())
+    break
+
+
+features.shape[1]
+contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)
+
+anchor_dot_contrast = torch.div(
+    torch.matmul(contrast_feature, contrast_feature.T),
+    0.1)
+
+logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+logits = anchor_dot_contrast - logits_max.detach()
+
+    
+from torch import nn
+import torch.nn.functional as F
+
+triplet_loss = nn.TripletMarginLoss(margin=0.5, p=2, eps=1e-7)
+anchor = contrast_feature[0,:]
+anchor = anchor.unsqueeze(0)
+anchor = anchor.repeat(3,1)
+
+triplet_loss(anchor,contrast_feature,0.8*contrast_feature)
+
+
+F.cosine_similarity(anchor, 0.7*contrast_feature, dim=1)
+
+torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+
+anchor.repeat(2,1)
+    
+
+torch.scatter(
+    torch.ones_like(anchor),
+    1,
+    torch.arange(1 * 2).view(-1, 1).to('cpu'),
+    0
+)
+
+z = torch.randn(3, 4)
+
+torch.matmul(z, z.t()) / 4
+
+
+
+
+

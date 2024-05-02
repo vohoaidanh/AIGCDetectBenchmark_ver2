@@ -138,11 +138,7 @@ if __name__ == '__main__':
             file_name = "epoch_{}_train_{}.json".format(epoch, comet_train_params['name'])
             experiment.log_confusion_matrix(matrix = train_conf_mat, file_name=file_name, epoch=epoch)
             
-        if epoch % opt.save_epoch_freq == 0:
-            print('saving the model at the end of epoch %d, iters %d' %
-                  (epoch, model.total_steps))
-            model.save_networks('latest')
-            model.save_networks(epoch)
+
         # Validation
         model.eval()
         #acc, ap = validate(model.model, val_opt)[:2]
