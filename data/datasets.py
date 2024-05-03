@@ -449,7 +449,10 @@ class read_data():
             img = processing_DIRE(img,self.opt,imgname)
         elif self.opt.detect_method == 'UnivFD':
             img = processing(img,self.opt,'clip')
-
+        elif self.opt.detect_method == 'Derivative':
+            img = grad_process(img)
+            img = Image.fromarray(img)
+            img = processing_DER(img,self.opt,'imagenet')
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
 
