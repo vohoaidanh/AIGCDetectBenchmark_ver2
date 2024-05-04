@@ -151,6 +151,53 @@ z = torch.randn(3, 4)
 
 torch.matmul(z, z.t()) / 4
 
+from PIL import Image
+import cv2
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torchvision import transforms
+
+img = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\0_real\000609025.jpg")
+img_tensor = transforms.ToTensor()(img)
+
+kernel_x = torch.tensor([[0, 0, 0],
+                         [0,-1, 1],
+                         [0, 0, 0]], dtype=torch.float32)
+kernel_x = kernel_x.unsqueeze(0).repeat(1, 3, 1, 1)
+
+
+
+kernel_y = torch.tensor([[0, 0, 0],
+                         [0,-1, 0],
+                         [0, 1, 0]], dtype=torch.float32)
+kernel_y = kernel_y.unsqueeze(0).repeat(1, 3, 1, 1)
+
+output_x = F.conv2d(img_tensor.unsqueeze(0), kernel_x, stride=1)
+output_y = F.conv2d(img_tensor.unsqueeze(0), kernel_y, stride=1)
+
+grad_magnitude = torch.sqrt(output_x**2 + output_y**2)
+grad_magnitude = grad_magnitude.squeeze(0,1).repeat(3,1,1)
+
+img_grad = transforms.ToPILImage()(grad_magnitude)
+
+output_pil = transforms.ToPILImage()(img_grad)
+
+
+import matplotlib.pyplot as plt
+
+plt.imshow(img_grad)
+
+
+
+
+ 
+
+
+
+
+
+
 
 
 

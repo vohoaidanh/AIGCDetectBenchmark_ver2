@@ -27,6 +27,7 @@ from preprocessing_model.guided_diffusion.script_util import (
     args_to_dict,
 )
 
+
 def data_augment(img, opt):
     img = np.array(img)
 
@@ -157,7 +158,7 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine"]:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -212,6 +213,26 @@ def processing(img, opt, name):
     return trans(img)
 
 def processing_DER(img, opt, name):
+
+    kernel_x = torch.tensor([[0, 0, 0],
+                             [0,-1, 1],
+                             [0, 0, 0]], dtype=torch.float32)
+    kernel_x = kernel_x.unsqueeze(0).repeat(1, 3, 1, 1)
+
+    kernel_y = torch.tensor([[0, 0, 0],
+                             [0,-1, 0],
+                             [0, 1, 0]], dtype=torch.float32)
+    kernel_y = kernel_y.unsqueeze(0).repeat(1, 3, 1, 1)
+    
+    img_tensor = transforms.ToTensor()(img)
+    output_x = F.conv2d(img_tensor.unsqueeze(0), kernel_x, stride=1)
+    output_y = F.conv2d(img_tensor.unsqueeze(0), kernel_y, stride=1)
+   
+    grad_magnitude = torch.sqrt(output_x**2 + output_y**2)
+    grad_magnitude = grad_magnitude.squeeze(0,1).repeat(3,1,1)
+
+    img = transforms.ToPILImage()(grad_magnitude)
+
     if opt.isTrain:
         crop_func = transforms.RandomCrop(opt.CropSize)
     elif opt.no_crop:
@@ -407,13 +428,11 @@ def processing_DIRE(img,opt,imgname):
     img_list.append(torch.unsqueeze(img,0))
     img=torch.cat(img_list,0)
 
-    
     reverse_fn = diffusion.ddim_reverse_sample_loop
     img = reshape_image(img, args.image_size)
     
     img=img.to(opt.process_device)
     model_kwargs = {}
-
 
     latent = reverse_fn(
         model,

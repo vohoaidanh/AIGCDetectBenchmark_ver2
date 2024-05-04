@@ -20,7 +20,6 @@ import imageio
 from skimage.transform import resize
 from .process import *
 import copy
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def dataset_folder(opt, root):
@@ -450,8 +449,6 @@ class read_data():
         elif self.opt.detect_method == 'UnivFD':
             img = processing(img,self.opt,'clip')
         elif self.opt.detect_method == 'Derivative':
-            img = grad_process(img)
-            img = Image.fromarray(img)
             img = processing_DER(img,self.opt,'imagenet')
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")

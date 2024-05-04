@@ -18,19 +18,6 @@ from torchvision.transforms.functional import to_pil_image
 
 from tqdm import tqdm
 
-
-config = argparse.ArgumentParser(description='Local Gradient image processing')
-config.add_argument('--input_dir', default='resources',
-    type=str, help='Directory of images need to convert to gradient')
-config.add_argument('--result_dir', default='result',
-    type=str, help='Directory for results')
-
-args = config.parse_args()
-
-
-#util.mkdir(args.result_dir)
-
-
 processimg = transforms.Compose([
             transforms.ToTensor(),
 
@@ -94,6 +81,20 @@ def show_img(image:torch.Tensor, cmap='gray'):
     
 if __name__ == '__main__':
     
+    
+    parser = argparse.ArgumentParser(description='Local Gradient image processing')
+    parser.add_argument('--input_dir', default='resources',
+        type=str, help='Directory of images need to convert to gradient')
+    parser.add_argument('--result_dir', default='result',
+        type=str, help='Directory for results')
+    
+    args = parser.parse_args()
+    
+    
+    #util.mkdir(args.result_dir)
+    
+
+    
     args.input_dir = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
     args.result_dir = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset_grad'
     image_paths = get_image_paths(args.input_dir)
@@ -109,8 +110,8 @@ if __name__ == '__main__':
         util.mkdir(os.path.dirname(dst_path))
         
         save_image(dst_path, image)
-        break
         
+        break
     
 # =============================================================================
 # # Define the directory path
