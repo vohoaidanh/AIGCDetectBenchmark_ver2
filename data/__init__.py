@@ -60,7 +60,7 @@ def create_dataloader(opt):
 
     
 def create_dataloader_new(opt):
-    shuffle = True if opt.isTrain else False
+    shuffle = True if opt.isTrain else True
     dataset = read_data_new(opt)
     if opt.detect_method=='Fusing':
         data_loader = torch.utils.data.DataLoader(dataset,

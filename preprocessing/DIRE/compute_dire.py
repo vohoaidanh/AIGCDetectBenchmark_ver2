@@ -177,7 +177,7 @@ def create_argparser():
         model_path="",
         real_step=0,
         continue_reverse=False,
-        has_subfolder=False,
+        has_subfolder=True,
         num_workers=4,
     )
     defaults.update(model_and_diffusion_defaults())
