@@ -5,6 +5,7 @@ networks/__pycache__/
 options/__pycache__/
 .spyproject/
 dataset/
+/images/
 data/*/
 *.jpg
 *.jpeg

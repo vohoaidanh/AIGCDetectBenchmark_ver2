@@ -6,9 +6,11 @@ from torchvision import transforms
 from PIL import Image
 
 model = resnet50(num_classes=1)
-features = torch.nn.Sequential(*list(model.children())[:-1])
+layer = list(model.children())
+features = torch.nn.Sequential(*list(model.children())[:6])
 
-
+for i in layer[:-5]:
+    print(i.__class__.__name__)
 # Định nghĩa biến biến đổi để chuyển đổi ảnh về kích thước và định dạng phù hợp
 transform = transforms.Compose([
     transforms.Resize(224),                      # Chuyển kích thước ảnh về kích thước mong muốn
@@ -25,7 +27,6 @@ with torch.no_grad():
     output = features(input_image_tens)
 
 features_output_1d = output.view(1,2048)
-
 
 import torch
 from options import TrainOptions
