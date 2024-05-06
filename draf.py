@@ -195,11 +195,58 @@ plt.imshow(img_grad)
  
 
 
+noise_data = np.random.randint(0, 256, size=(256,256,3), dtype=np.uint8)  # Tạo dữ liệu nhiễu ngẫu nhiên từ 0 đến 255
+noise_image = Image.fromarray(noise_data) 
 
 
 
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.transform import swirl, warp
+from PIL import Image
+import copy
+# Đọc ảnh đầu vào
+image = Image.open('images/dog.jpg')
+# Thiết lập các tham số cho hiệu ứng liquify
+strength = 1  # Độ mạnh của hiệu ứng
+radius = 100    # Bán kính của vùng bóp méo
+
+# Áp dụng hiệu ứng liquify bằng hàm swirl từ scikit-image
+w, h = image.size
+image  = np.asarray(image)
+center = tuple(np.random.randint(0,100,2))
+
+liquified_image = copy.deepcopy(image)
+for i in range(np.random.randint(0,100)):
+   x = np.random.randint(0,w)
+   y = np.random.randint(0,h)
+   strength = np.random.randint(1,3)
+   radius = np.random.randint(30,100)
+   liquified_image = swirl(liquified_image, rotation=0, strength=strength, radius=radius, center=(x,y))
+
+    
+    
+liquified_image = swirl(image, rotation=0, strength=strength, radius=radius, center=(x,y))
+    
 
 
 
+# Hiển thị ảnh gốc và ảnh đã được liquify
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.imshow(image)
+plt.title('Original Image')
+plt.axis('off')
 
+plt.subplot(1, 2, 2)
+plt.imshow(liquified_image)
+plt.title('Liquified Image')
+plt.axis('off')
 
+plt.show()
+
+            
+            
+            
+            
+            

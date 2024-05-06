@@ -158,7 +158,7 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative']:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")

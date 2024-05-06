@@ -449,8 +449,8 @@ class read_data():
         elif self.opt.detect_method == 'Derivative':
             img = processing_DER(img,self.opt,'imagenet')
         elif self.opt.detect_method == "CNNSpot_Noise":
-            if random() <0.3:
-                noise_data = np.random.randint(0, 256, size=(256,256), dtype=np.uint8)  # Tạo dữ liệu nhiễu ngẫu nhiên từ 0 đến 255
+            if random() < 0.3 and target == 1 and (self.opt.isTrain or self.opt.isVal):
+                noise_data = np.random.randint(0, 256, size=(256,256,3), dtype=np.uint8)  # Tạo dữ liệu nhiễu ngẫu nhiên từ 0 đến 255
                 img = Image.fromarray(noise_data) 
             img = processing(img,self.opt,'imagenet')
         else:
