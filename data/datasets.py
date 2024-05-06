@@ -423,15 +423,13 @@ class read_data():
     def __getitem__(self, index):
         img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
         imgname = self.img[index]
+        
         # compute scaling
         height, width = img.height, img.width
         if (not self.opt.isTrain) and (not self.opt.isVal):
             img = custom_augment(img, self.opt)
-
-        
-        
-        
-        
+      
+      
         if self.opt.detect_method in ['CNNSpot','Gram','Steg']:
             img = processing(img,self.opt,'imagenet')
         elif self.opt.detect_method == 'FreDect':
@@ -450,6 +448,11 @@ class read_data():
             img = processing(img,self.opt,'clip')
         elif self.opt.detect_method == 'Derivative':
             img = processing_DER(img,self.opt,'imagenet')
+        elif self.opt.detect_method == "CNNSpot_Noise":
+            if random() <0.3:
+                noise_data = np.random.randint(0, 256, size=(256,256), dtype=np.uint8)  # Tạo dữ liệu nhiễu ngẫu nhiên từ 0 đến 255
+                img = Image.fromarray(noise_data) 
+            img = processing(img,self.opt,'imagenet')
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
 
