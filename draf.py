@@ -214,10 +214,9 @@ radius = 100    # Bán kính của vùng bóp méo
 # Áp dụng hiệu ứng liquify bằng hàm swirl từ scikit-image
 w, h = image.size
 image  = np.asarray(image)
-center = tuple(np.random.randint(0,100,2))
 
 liquified_image = copy.deepcopy(image)
-for i in range(np.random.randint(0,100)):
+for i in range(np.random.randint(10,15)):
    x = np.random.randint(0,w)
    y = np.random.randint(0,h)
    strength = np.random.randint(1,3)
@@ -225,10 +224,6 @@ for i in range(np.random.randint(0,100)):
    liquified_image = swirl(liquified_image, rotation=0, strength=strength, radius=radius, center=(x,y))
 
     
-    
-liquified_image = swirl(image, rotation=0, strength=strength, radius=radius, center=(x,y))
-    
-
 
 
 # Hiển thị ảnh gốc và ảnh đã được liquify
@@ -246,7 +241,5 @@ plt.axis('off')
 plt.show()
 
             
-            
-            
-            
+  
             
