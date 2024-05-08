@@ -420,9 +420,8 @@ class read_data_cam():
         fake_label_list = [0 for _ in range(len(fake_img_list))]
         self.img = real_img_list+fake_img_list
         self.label = real_label_list+fake_label_list
-        
-        self.length = self.__len__()
         self.real_img_list = real_img_list
+        self.length = self.__len__()
         # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
 
 
@@ -442,26 +441,23 @@ class read_data_cam():
         img = processing(img,self.opt,'imagenet')
             
         if random() > 0.5:      
-            idx2 = choice(range(self.length))
+            idx2 = choice(range(len(self.label)))
         else:
             idx2 = index
         
         if idx2!=index:
             img2, label2 = Image.open(self.img[idx2]).convert('RGB'), self.label[idx2]
             img2 = processing(img2,self.opt,'imagenet')
+            return img, img2, 0
             
         else:
             img2 = img
-            label2 = label
+            return img, img2, 1
         
-        if label2 == label:
-            target = 1 
-        else:
-            target = 0
-        return img, img2, target
+        return None
 
     def __len__(self):
-        if (self.opt.isTrain or self.opt.isVal):
+        if (not self.opt.isTrain and not self.opt.isVal):
             return len(self.label)
         else:
             return len(self.real_img_list)

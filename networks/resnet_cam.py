@@ -23,6 +23,7 @@ model_urls = {
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -254,10 +255,12 @@ class LCAM(nn.Module):
         self.model =  model
         self.footless = Footless(pretrained=pretrained, start_layer=6)
         self.cam_model = resnet50(pretrained=pretrained)
-                       
         #for name, param in self.model.named_parameters():
         #    param.requires_grad = False
-            
+        self.model.to(device)
+        self.footless.to(device)
+        self.cam_model.to(device)    
+        
         self.feature_extractor = create_feature_extractor(
         	self.model, return_nodes=['fc', 'layer2.3.relu_2']) # This is last layer of layer2 in resnet
         
@@ -291,10 +294,12 @@ class LCAM(nn.Module):
         layer_feature = self.footless(feature_extractor)
         
         # Forward pass through the second ResNet-50 model
+        x_ref = x_ref.to(device)
         grayscale_cam = self.cam(x_ref)
         grayscale_cam = torch.Tensor(grayscale_cam)
         grayscale_cam = grayscale_cam.unsqueeze(1)
         grayscale_cam = grayscale_cam.expand(-1, 3, -1, -1)
+        grayscale_cam = grayscale_cam.to(device)
         cam_feature = self.cam_model(grayscale_cam)
         
         # Kết hợp hai features từ hai nhánh
@@ -306,16 +311,16 @@ class LCAM(nn.Module):
         parameters_to_update = []
         for name, param in self.named_parameters():
             if any(target_model_name in name for target_model_name in target_model_names):
-                parameters_to_update.append((name,param))
+                parameters_to_update.append(param)
         return parameters_to_update
     
 def resnet_CAM(model, pretrained=True, **kwargs):
     resnet_cam_model = LCAM(model, pretrained= pretrained)
     return resnet_cam_model
 
+    
+        
 # =============================================================================
-#     
-#         
 # modelresnet = resnet50()
 # lcam = LCAM(modelresnet)
 # 
@@ -338,6 +343,6 @@ def resnet_CAM(model, pretrained=True, **kwargs):
 # lcam.footless
 # lcam.cam_model
 # 
+# 
+# out_4 = lcam(i[0], i[1])
 # =============================================================================
-
- 

@@ -121,12 +121,14 @@ def get_model(opt):
         if opt.isTrain or opt.isVal:
             resnet_trained = resnet50(num_classes=1, pretrained=False)
             state_dict = torch.load(opt.model_path_trained, map_location=device)
+            print('loading state_dict from: ',opt.model_path_trained)
             resnet_trained.load_state_dict(state_dict['model'])
             model = resnet_CAM(resnet_trained, pretrained=True)
             return model
         else:
             resnet_trained = resnet50(num_classes=1, pretrained=False)
             state_dict = torch.load(opt.model_path_trained, map_location=device)
+            print('loading state_dict from: ',opt.model_path_trained)
             resnet_trained.load_state_dict(state_dict['model'])
             model = resnet_CAM(resnet_trained, pretrained=True)
             return model
