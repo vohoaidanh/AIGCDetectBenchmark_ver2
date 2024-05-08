@@ -404,8 +404,69 @@ def process_img(img,opt,imgname,target):
 
 
     return img, target
-    
 
+
+class read_data_cam():
+    """
+        This dataset for CNNSpot_CAM detect method
+        Note! Positive class 1 = Real image
+    """
+    def __init__(self, opt):
+        self.opt = opt
+        self.root = opt.dataroot
+        real_img_list = loadpathslist(self.root,'0_real')    
+        real_label_list = [1 for _ in range(len(real_img_list))]
+        fake_img_list = loadpathslist(self.root,'1_fake')
+        fake_label_list = [0 for _ in range(len(fake_img_list))]
+        self.img = real_img_list+fake_img_list
+        self.label = real_label_list+fake_label_list
+        
+        self.length = self.__len__()
+        self.real_img_list = real_img_list
+        # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
+
+
+    def __getitem__(self, index):
+        
+        img, label = Image.open(self.img[index]).convert('RGB'), self.label[index]
+        imgname = self.img[index]
+        # compute scaling
+        height, width = img.height, img.width
+        
+        if (not self.opt.isTrain) and (not self.opt.isVal):
+            # In eval mode
+            img = custom_augment(img, self.opt)
+            img = processing(img,self.opt,'imagenet')
+            return img, img, 1
+      
+        img = processing(img,self.opt,'imagenet')
+            
+        if random() > 0.5:      
+            idx2 = choice(range(self.length))
+        else:
+            idx2 = index
+        
+        if idx2!=index:
+            img2, label2 = Image.open(self.img[idx2]).convert('RGB'), self.label[idx2]
+            img2 = processing(img2,self.opt,'imagenet')
+            
+        else:
+            img2 = img
+            label2 = label
+        
+        if label2 == label:
+            target = 1 
+        else:
+            target = 0
+        return img, img2, target
+
+    def __len__(self):
+        if (self.opt.isTrain or self.opt.isVal):
+            return len(self.label)
+        else:
+            return len(self.real_img_list)
+    
+    
 class read_data():
     def __init__(self, opt):
         self.opt = opt
@@ -461,6 +522,7 @@ class read_data():
 
     def __len__(self):
         return len(self.label)
+    
 
 def read_data_new(opt):
     if opt.method_combine is not None:
@@ -472,6 +534,9 @@ def read_data_new(opt):
             return read_data_cnnspot_fredect(opt)
         if 'midas' in opt.method_combine.lower():
             return midas_dataset(opt)
+        
+    if 'cnnspot_cam' in opt.detect_method.lower():
+        return read_data_cam(opt)
     else:
         return read_data(opt)
     

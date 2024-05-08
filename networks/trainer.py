@@ -25,14 +25,22 @@ class Trainer(BaseModel):
         if self.isTrain:
             self.loss_fn = nn.BCEWithLogitsLoss()
             # initialize optimizers
-            params = self.model.parameters()
-            if self.opt.detect_method == "UnivFD" and self.opt.fix_backbone:
+            
+            
+            if self.opt.detect_method == 'CNNSpot_CAM':
+                params = self.model.get_parameters_to_optimize()
+            
+            elif self.opt.detect_method == "UnivFD" and self.opt.fix_backbone:
                 params = []
                 for name, p in self.model.named_parameters():
                     if  name=="fc.weight" or name=="fc.bias": 
                         params.append(p) 
                     else:
                         p.requires_grad = False
+            
+            else:
+                params = self.model.parameters()
+            
             if opt.optim == 'adam':
                 if self.opt.detect_method == "UnivFD":
                     self.optimizer = torch.optim.AdamW(params, lr=opt.lr, betas=(opt.beta1, 0.999), weight_decay=opt.weight_decay)
@@ -69,6 +77,11 @@ class Trainer(BaseModel):
             self.input = input[0].to(self.device)
             self.input2 = input[1].to(self.device)
             self.label = input[2].to(self.device).float() #(batch_size)
+        
+        elif self.opt.detect_method == "CNNSpot_CAM":
+            self.input = input[0].to(self.device)
+            self.input2 = input[1].to(self.device)
+            self.label = input[2].to(self.device).float() #(batch_size)
         else:
             self.input = input[0].to(self.device)
             self.label = input[1].to(self.device).float()
@@ -81,6 +94,8 @@ class Trainer(BaseModel):
             self.output = self.model(self.input)
             self.output = self.output.view(-1).unsqueeze(1)
         elif self.opt.detect_method == "Combine":
+            self.output = self.model(self.input, self.input2)
+        elif self.opt.detect_method == "CNNSpot_CAM" :
             self.output = self.model(self.input, self.input2)
         else: 
             self.output = self.model(self.input)

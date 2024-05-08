@@ -280,16 +280,18 @@ class LCAM(nn.Module):
                 if isinstance(m, nn.Linear):
                     init.xavier_uniform_(m.weight)
         
-    def forward(self, x):
+    def forward(self, x, x_ref=None):
         #xi is GRB image origin
         #x2 is shading image
         
         # Forward pass through the first ResNet-50 model
+        if x_ref is None:
+            x_ref = x
         feature_extractor = self.feature_extractor(x)['layer2.3.relu_2']
         layer_feature = self.footless(feature_extractor)
         
         # Forward pass through the second ResNet-50 model
-        grayscale_cam = self.cam(x)
+        grayscale_cam = self.cam(x_ref)
         grayscale_cam = torch.Tensor(grayscale_cam)
         grayscale_cam = grayscale_cam.unsqueeze(1)
         grayscale_cam = grayscale_cam.expand(-1, 3, -1, -1)
@@ -300,7 +302,7 @@ class LCAM(nn.Module):
         output = self.head(features)
         return output
     
-    def get_parameters_to_optimize(self, target_model_names = ['footless', 'cam_model']):
+    def get_parameters_to_optimize(self, target_model_names = ['footless', 'cam_model', 'head']):
         parameters_to_update = []
         for name, param in self.named_parameters():
             if any(target_model_name in name for target_model_name in target_model_names):

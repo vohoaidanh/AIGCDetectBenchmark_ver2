@@ -34,23 +34,25 @@ from data.datasets import read_data_combine
 from data import create_dataloader_new,create_dataloader
 
 opt = TrainOptions().parse()
-opt.dataroot = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
+opt.dataroot = r'E:\RealFakeDB512'
 opt.dataroot2 = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
 opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.val_split)
-opt.batch_size = 1
-opt.method_combine = 'CNNSpot+FreDect'
+opt.batch_size = 8
+opt.method_combine = None#'CNNSpot+FreDect'
+opt.detect_method = 'CNNSpot_CAM'
+opt.isTrain
 
 data_loader = create_dataloader_new(opt)
 m=None
 for i in data_loader:
-    print(i)
+    #print(i)
     m=i
     break
 
 
 import matplotlib.pyplot as plt
 
-m = i[0].view((3,224,224))
+m = i[0][3].view((3,224,224))
 m = m.permute(1,2,0)
 plt.imshow(m)
 

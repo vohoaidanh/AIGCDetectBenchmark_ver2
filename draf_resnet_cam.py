@@ -20,7 +20,7 @@ model = resnet50(pretrained=False,num_classes=1)
 state_dict = torch.load(r"D:\K32\do_an_tot_nghiep\data\240428_CNNSpot_checkpoint\model_epoch_best.pth", map_location='cpu')
 model.load_state_dict(state_dict['model'])
 
-target_layers = [model.layer4[-1]]
+target_layers = [model.layer2[-1]]
 
 transform = transforms.Compose([
     transforms.Resize(224),                      # Chuyển kích thước ảnh về kích thước mong muốn
@@ -31,25 +31,27 @@ transform = transforms.Compose([
 
 
 
-cam = XGradCAM(model=model, target_layers=target_layers)
+cam = GradCAM(model=model, target_layers=target_layers)
 
 
 input_image = Image.open(
-    r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\0_real\000611338.jpg")
+    r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake\3f2011aa-144a-493c-9f84-a3cfcdd92cec.jpg")
 input_image_tens = transform(input_image)
 input_image_tens = input_image_tens.unsqueeze(0)
     
-input_image_tens = torch.randn(2,3,224,224)
+#input_image_tens = torch.randn(2,3,224,224)
 
 grayscale_cam = cam(input_tensor=input_image_tens)
 grayscale_cam = grayscale_cam[0, :]
+grayscale_cam = np.repeat(grayscale_cam[:, :, np.newaxis], 3, axis=-1)
+
 
 rgb_img = np.asarray(input_image.resize((grayscale_cam.shape[-1],grayscale_cam.shape[0])))/255.0
 
 visualization = show_cam_on_image(rgb_img, grayscale_cam, use_rgb=True)
 
 
-plt.imshow(visualization)
+plt.imshow(grayscale_cam)
 plt.axis('off')
 
 print(cam.outputs)
