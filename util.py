@@ -22,6 +22,7 @@ from preprocessing_model.guided_diffusion.script_util import (
 )
 ###############################################################################
 from networks.resnet_combine import resnet50_combine
+from networks.resnet_cam import resnet_CAM
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -115,6 +116,21 @@ def get_model(opt):
         else:
             return resnet50_combine(pretrained=False, num_classes=1,checkpoint1='', checkpoint2='')
         
+    elif opt.detect_method == "CNNSpot_CAM":
+        if opt.isTrain or opt.isVal:
+            resnet_trained = resnet50(num_classes=1, pretrained=False)
+            state_dict = torch.load(opt.model_path_trained, map_location='cpu')
+            resnet_trained.load_state_dict(state_dict['model'])
+            model = resnet_CAM(resnet_trained, pretrained=True)
+            return model
+        else:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            resnet_trained = resnet50(num_classes=1, pretrained=False)
+            state_dict = torch.load(opt.model_path_trained, map_location=device)
+            resnet_trained.load_state_dict(state_dict['model'])
+            model = resnet_CAM(resnet_trained, pretrained=True)
+            return model
+            
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         

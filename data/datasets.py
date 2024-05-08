@@ -430,7 +430,7 @@ class read_data():
             img = custom_augment(img, self.opt)
       
       
-        if self.opt.detect_method in ['CNNSpot','Gram','Steg']:
+        if self.opt.detect_method in ['CNNSpot','Gram','Steg', 'CNNSpot_CAM']:
             img = processing(img,self.opt,'imagenet')
         elif self.opt.detect_method == 'FreDect':
             img = processing_DCT(img,self.opt)

@@ -25,6 +25,7 @@ class TrainOptions():
         parser.add_argument('--no_crop', action='store_true')
         parser.add_argument('--no_resize', action='store_true')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
+        parser.add_argument('--model_path_trained',type=str,default='./weights/classifier/CNNSpot.pth',help='the path of detection model trained when using CNNSpot_CAM')
 
         # parser.add_argument('--is_single',action='store_true',help='evaluate image by image')
         parser.add_argument('--detect_method', type=str,default='CNNSpot', help='choose the detection method')
@@ -152,6 +153,8 @@ class TestOptions():
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
 
         parser.add_argument('--model_path',type=str,default='./weights/classifier/CNNSpot.pth',help='the path of detection model')
+        parser.add_argument('--model_path_trained',type=str,default='./weights/classifier/CNNSpot.pth',help='the path of detection model trained when using CNNSpot_CAM')
+
         # parser.add_argument('--is_single',action='store_true',help='evaluate image by image')
         parser.add_argument('--detect_method', type=str,default='CNNSpot', help='choose the detection method')
         parser.add_argument('--noise_type', type=str,default=None, help='such as jpg, blur and resize')

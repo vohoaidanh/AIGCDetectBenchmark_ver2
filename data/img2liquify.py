@@ -154,26 +154,20 @@ if __name__ == '__main__':
     
     
     parser = argparse.ArgumentParser(description='Local image processing')
-    parser.add_argument('--input_dir', default='resources',
+    parser.add_argument('--input_dir', default='D:/K32/do_an_tot_nghiep/data/real_gen_dataset',
         type=str, help='Directory of images need to convert')
-    parser.add_argument('--result_dir', default='result',
+    parser.add_argument('--result_dir', default='D:/K32/do_an_tot_nghiep/data/real_gen_dataset_liquify',
         type=str, help='Directory for results')
     
     args = parser.parse_args()
     
-    
     #util.mkdir(args.result_dir)
     
 
-    
-    args.input_dir = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
-    args.result_dir = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset_liquify'
-    #image_paths = get_image_paths(args.input_dir)
-    
     dataset = CustomImageDataset(args.input_dir, transform=img2liquify)
     #dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-    
+    len(dataset)
 
     for i, (img, name) in enumerate(dataset):
         file_path = name.replace(args.input_dir, args.result_dir)
