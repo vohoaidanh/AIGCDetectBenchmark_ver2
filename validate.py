@@ -109,7 +109,7 @@ def validate(model, opt):
         
     elif opt.detect_method == "Combine":
         y_true, y_pred = validate_combine(model, data_loader)
-    elif opt.detect_method == "CNNSpot_CAM":
+    elif opt.detect_method == "CNNSpot_CAM":           
         y_true, y_pred = validate_cam(model, data_loader)
     else:
         # with torch.no_grad():

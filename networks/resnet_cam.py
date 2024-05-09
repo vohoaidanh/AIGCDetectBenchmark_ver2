@@ -249,9 +249,9 @@ class Footless(nn.Module):
         return x
     
 class LCAM(nn.Module):
-    def __init__(self, model:ResNet, init_head_weight=True, pretrained=True):
+    def __init__(self, model:ResNet, init_head_weight=True, pretrained=True, inference = False):
         super(LCAM,self).__init__()
-        
+        self.inference = inference
         self.model =  model
         self.footless = Footless(pretrained=pretrained, start_layer=6)
         self.cam_model = resnet50(pretrained=pretrained)
@@ -283,14 +283,14 @@ class LCAM(nn.Module):
                 if isinstance(m, nn.Linear):
                     init.xavier_uniform_(m.weight)
         
-    def forward(self, x, x_ref=None):
+    def forward(self, x, x_ref):
         #xi is GRB image origin
         #x2 is shading image
-        
         # Forward pass through the first ResNet-50 model
         if x_ref is None:
             x_ref = x
         feature_extractor = self.feature_extractor(x)['layer2.3.relu_2']
+        label_gt = self.feature_extractor(x)['fc']
         layer_feature = self.footless(feature_extractor)
         
         # Forward pass through the second ResNet-50 model
@@ -305,6 +305,9 @@ class LCAM(nn.Module):
         # Kết hợp hai features từ hai nhánh
         features  = torch.cat((layer_feature, cam_feature), dim=1)
         output = self.head(features)
+        if self.inference:
+            label_gt = label_gt.view(output.shape)
+            output = output*label_gt
         return output
     
     def get_parameters_to_optimize(self, target_model_names = ['footless', 'cam_model', 'head']):
@@ -314,8 +317,8 @@ class LCAM(nn.Module):
                 parameters_to_update.append(param)
         return parameters_to_update
     
-def resnet_CAM(model, pretrained=True, **kwargs):
-    resnet_cam_model = LCAM(model, pretrained= pretrained)
+def resnet_CAM(model, pretrained=True, inference=False):
+    resnet_cam_model = LCAM(model, pretrained=pretrained, inference=inference)
     return resnet_cam_model
 
     

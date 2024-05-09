@@ -130,7 +130,7 @@ def get_model(opt):
             state_dict = torch.load(opt.model_path_trained, map_location=device)
             print('loading state_dict from: ',opt.model_path_trained)
             resnet_trained.load_state_dict(state_dict['model'])
-            model = resnet_CAM(resnet_trained, pretrained=True)
+            model = resnet_CAM(resnet_trained, pretrained=True, inference=opt.CNNSpot_CAM_inference)
             return model
             
     else:
