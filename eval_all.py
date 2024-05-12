@@ -72,6 +72,13 @@ for v_id, val in enumerate(vals):
                 model.load_state_dict({k.replace('module.', ''): v for k, v in state_dict['netC'].items()})
         elif opt.detect_method == "UnivFD":
             model.fc.load_state_dict(state_dict)
+        elif opt.detect_method =="CNNSpot_CAM":
+            
+            model.load_state_dict(state_dict['model'],strict=True)
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            resnet_trained_dict = torch.load(opt.model_path_trained, map_location=device)
+            model.model.load_state_dict(resnet_trained_dict['model'],strict=True)
+            
         else:
             model.load_state_dict(state_dict['model'],strict=True)
     except:

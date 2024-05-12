@@ -234,7 +234,7 @@ def resnet152(pretrained=False, **kwargs):
 
 class Footless(nn.Module):
 
-    def __init__(self, start_layer=6, pretrained=True):
+    def __init__(self, start_layer=7, pretrained=True):
         super(Footless, self).__init__()
         # Load the pre-trained ResNet model
         self.features = resnet50(pretrained=pretrained)
@@ -253,7 +253,7 @@ class LCAM(nn.Module):
         super(LCAM,self).__init__()
         self.inference = inference
         self.model =  model
-        self.footless = Footless(pretrained=pretrained, start_layer=6)
+        self.footless = Footless(pretrained=pretrained, start_layer=7)
         self.cam_model = resnet50(pretrained=pretrained)
         #for name, param in self.model.named_parameters():
         #    param.requires_grad = False
@@ -262,7 +262,7 @@ class LCAM(nn.Module):
         self.cam_model.to(device)    
         
         self.feature_extractor = create_feature_extractor(
-        	self.model, return_nodes=['fc', 'layer2.3.relu_2']) # This is last layer of layer2 in resnet
+        	self.model, return_nodes=['fc', 'layer3.5.relu_2']) # This is last layer of layer2 in resnet
         
         self.target_layers = [self.model.layer2[-1]] # is === layer2.3.relu_2 
 
@@ -289,8 +289,10 @@ class LCAM(nn.Module):
         # Forward pass through the first ResNet-50 model
         if x_ref is None:
             x_ref = x
-        feature_extractor = self.feature_extractor(x)['layer2.3.relu_2']
-        label_gt = self.feature_extractor(x)['fc']
+            
+        _extractor =  self.feature_extractor(x)
+        feature_extractor = _extractor['layer3.5.relu_2']
+        label_pre = _extractor['fc']
         layer_feature = self.footless(feature_extractor)
         
         # Forward pass through the second ResNet-50 model
@@ -306,8 +308,15 @@ class LCAM(nn.Module):
         features  = torch.cat((layer_feature, cam_feature), dim=1)
         output = self.head(features)
         if self.inference:
-            label_gt = label_gt.view(output.shape)
-            output = output*label_gt
+            label_pre = label_pre.sigmoid()
+            label_pre[label_pre > 0.5] = 1.0
+            label_pre[label_pre <= 0.5] = 0.0
+            label_pre = label_pre.view(output.shape)
+            
+            output = output.sigmoid()
+            output[output > 0.5] = 1.0
+            output[output <= 0.5] = 0.0
+            output = output*label_pre
         return output
     
     def get_parameters_to_optimize(self, target_model_names = ['footless', 'cam_model', 'head']):

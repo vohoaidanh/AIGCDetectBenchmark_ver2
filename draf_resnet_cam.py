@@ -63,14 +63,14 @@ nodes, _ = get_graph_node_names(model)
 
 
 feature_extractor = create_feature_extractor(
-	model, return_nodes=['fc', 'layer2.3.relu_2'])
+	model, return_nodes=['fc', 'layer3.5.relu_2'])
 # `out` will be a dict of Tensors, each representing a feature map
 out = feature_extractor(input_image_tens)
-out['layer2.3.relu_2']
+out['layer3.5.relu_2'].shape
 
-features = torch.nn.Sequential(*list(model.children())[:6])
+features = torch.nn.Sequential(*list(model.children())[:7])
 out_f = features(input_image_tens)
-
+out_f.shape
 
 
 torch.sum(out['fc'] - out_f)

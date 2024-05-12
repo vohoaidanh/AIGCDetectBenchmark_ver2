@@ -1,4 +1,4 @@
-from networks.resnet import resnet50
+from networks.resnet import resnet50, resnet18
 
 import torch
 from torchvision import transforms
@@ -246,8 +246,102 @@ plt.show()
   
             
 
+import numpy as np
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Assuming 'output' is the output of your model
+output = 0.8  # Example output value
+
+probability = sigmoid(output)
+print("Probability:", probability)
 
 
+
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.transform import swirl, warp
+from PIL import Image
+import copy
+# Đọc ảnh đầu vào
+import torch
+from torchvision import transforms
+
+from pytorch_grad_cam import GradCAM, HiResCAM, ScoreCAM, GradCAMPlusPlus, AblationCAM, XGradCAM, EigenCAM, FullGrad
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from networks.resnet import resnet50
+
+
+transform = transforms.Compose([
+    transforms.Resize(224),                      # Chuyển kích thước ảnh về kích thước mong muốn
+    transforms.ToTensor(),                              # Chuyển đổi ảnh thành tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],    # Chuẩn hóa giá trị pixel theo mean và std của ImageNet
+                         std=[0.229, 0.224, 0.225])
+])
+
+import os
+from random import choice
+label = ['Fake', 'Real']
+root = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake'
+root = root.replace('\\', r'/')
+img_list = []
+for a,b,c in os.walk(root):
+    if len(c)>0:
+
+        ims = [os.path.join(a,i) for i in c if i.endswith(('jpg', 'png', 'webp', 'tif'))]
+        img_list.extend(ims)
+        
+
+model = resnet50(pretrained=False, num_classes=1)
+
+for name, layer in model.named_children():
+    print(name)
+    
+for name, layer in model.named_modules():
+    print(name)
+    
+status_dict = torch.load(r"D:\K32\do_an_tot_nghiep\data\CNNSpot_1isreal_model_epoch_best.pth", map_location=torch.device('cpu'))
+model.load_state_dict(status_dict['model'])
+target_layers = [model.layer4[-1]]
+cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
+targets = [ClassifierOutputTarget(0)]
+
+
+input_image = Image.open(choice(img_list))
+input_image = input_image.resize((224,224))
+input_image_tens = transform(input_image)
+input_image_tens = input_image_tens.unsqueeze(0)
+
+input_tensor = input_image_tens# Create an input tensor image for your model..
+# Note: input_tensor can be a batch tensor with several images!
+
+# Construct the CAM object once, and then re-use it on many images:
+
+# You can also pass aug_smooth=True and eigen_smooth=True, to apply smoothing.
+grayscale_cam = cam(input_tensor=input_tensor, targets=targets)
+
+# In this example grayscale_cam has only one image in the batch:
+grayscale_cam = grayscale_cam[0, :]
+visualization = show_cam_on_image(np.asarray(input_image, dtype='float32')/255.0, grayscale_cam, use_rgb=True)
+
+# You can also get the model outputs without having to re-inference
+model_outputs = int((cam.outputs.sigmoid()>0.5)*1)
+plt.imshow(visualization)
+plt.axis('off')
+plt.title(label[model_outputs])
+
+
+res18 = resnet18()
+
+
+
+plt.imshow(input_image)
 
 
 

@@ -119,18 +119,15 @@ def get_model(opt):
     elif opt.detect_method == "CNNSpot_CAM":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if opt.isTrain or opt.isVal:
-            resnet_trained = resnet50(num_classes=1, pretrained=False)
+            resnet = resnet50(num_classes=1, pretrained=False)
             state_dict = torch.load(opt.model_path_trained, map_location=device)
             print('loading state_dict from: ',opt.model_path_trained)
-            resnet_trained.load_state_dict(state_dict['model'])
-            model = resnet_CAM(resnet_trained, pretrained=True)
+            model = resnet_CAM(resnet, pretrained=True)
+            model.model.load_state_dict(state_dict['model'])
             return model
         else:
-            resnet_trained = resnet50(num_classes=1, pretrained=False)
-            state_dict = torch.load(opt.model_path_trained, map_location=device)
-            print('loading state_dict from: ',opt.model_path_trained)
-            resnet_trained.load_state_dict(state_dict['model'])
-            model = resnet_CAM(resnet_trained, pretrained=True, inference=opt.CNNSpot_CAM_inference)
+            resnet = resnet50(num_classes=1, pretrained=False)
+            model = resnet_CAM(resnet, pretrained=True, inference=opt.CNNSpot_CAM_inference)
             return model
             
     else:

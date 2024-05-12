@@ -436,10 +436,24 @@ class read_data_cam():
             # In eval mode
             img = custom_augment(img, self.opt)
             img = processing(img,self.opt,'imagenet')
+            
             if self.opt.CNNSpot_CAM_inference:
                 # Being in inference mode means we need the model's response image to be real or fake
                 return img, img, label
-            return img, img, 1
+            else:
+                if random() > 0.5:      
+                    idx2 = choice(range(len(self.label)))
+                else:
+                    idx2 = index
+                    
+                if idx2!=index:
+                    img2, label2 = Image.open(self.img[idx2]).convert('RGB'), self.label[idx2]
+                    img2 = custom_augment(img2, self.opt)
+                    img2 = processing(img2,self.opt,'imagenet')
+                    return img, img2, 0
+                else:
+                    return img, img, 1
+
       
         img = processing(img,self.opt,'imagenet')
             
