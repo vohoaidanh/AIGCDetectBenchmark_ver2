@@ -394,8 +394,8 @@ a = a.reshape(-1, input_tensor.size(1), 3, 3)
 
 
 
-
-
+image = Image.open(r'images/dog.jpg')
+image.size[0] > 611
 
 
 

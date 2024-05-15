@@ -100,10 +100,10 @@ def cnn_simpest(pretrained=False, **kwargs):
 if __name__ == '__main__':
     
     #test model
-    model = cnn_simpest(num_classes=10)
+    model = cnn_simpest(num_classes=1)
 
-    input_tensor = torch.randn(1, 3, 256, 224)
+    input_tensor = torch.randn(1, 3, 224, 224)
     
     out_tensor = model(input_tensor)
-    out_tensor = out_tensor.view(-1)
+    #out_tensor = out_tensor.view(-1)
    

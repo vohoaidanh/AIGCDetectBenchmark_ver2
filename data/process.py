@@ -213,7 +213,11 @@ def processing(img, opt, name):
     return trans(img)
 
 def processing_CNNSimpest(img, opt, name):
-
+    if img.size[0] < opt.CropSize or img.size[1] < opt.CropSize:
+        rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+    else:
+        rz_func =  transforms.Lambda(lambda img: img)
+        
     crop_func = transforms.RandomCrop(opt.CropSize)
     trans = transforms.Compose([
                 transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
@@ -221,6 +225,7 @@ def processing_CNNSimpest(img, opt, name):
                 transforms.ToTensor(),
                 transforms.Normalize(mean=MEAN[name], std=STD[name]),
                 ])
+    
     return trans(img)
 
 def processing_DER(img, opt, name):

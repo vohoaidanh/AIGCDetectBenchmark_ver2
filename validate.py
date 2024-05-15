@@ -3,7 +3,7 @@ import numpy as np
 from networks.resnet import resnet50
 from sklearn.metrics import average_precision_score, accuracy_score, confusion_matrix
 from options import TestOptions
-from data import create_dataloader, create_dataloader_new
+from data import create_dataloader_new
 
 
 from data.process import get_processing_model
@@ -97,6 +97,7 @@ def validate_cam(model, data_loader):
         y_true.extend(label.flatten().tolist())
 
     return y_true, y_pred
+
 
 def validate(model, opt):
     
