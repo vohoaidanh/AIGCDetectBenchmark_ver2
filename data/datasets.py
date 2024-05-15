@@ -493,7 +493,6 @@ class read_data():
 
         # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
 
-
     def __getitem__(self, index):
         img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
         imgname = self.img[index]
@@ -527,6 +526,10 @@ class read_data():
                 noise_data = np.random.randint(0, 256, size=(256,256,3), dtype=np.uint8)  # Tạo dữ liệu nhiễu ngẫu nhiên từ 0 đến 255
                 img = Image.fromarray(noise_data) 
             img = processing(img,self.opt,'imagenet')
+        
+        elif self.opt.detect_method == "CNNSimpest":
+            img = processing_CNNSimpest(img,self.opt,'imagenet')
+            
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
 

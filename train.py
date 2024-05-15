@@ -123,7 +123,7 @@ if __name__ == '__main__':
             print('saving the model at the end of epoch %d, iters %d' %
                   (epoch, model.total_steps))
             model.save_networks('latest')
-            model.save_networks(epoch)
+            #model.save_networks(epoch)
             
         # Caculate loss, acc each epoch
         y_true, y_pred = np.array(y_true), np.array(y_pred)

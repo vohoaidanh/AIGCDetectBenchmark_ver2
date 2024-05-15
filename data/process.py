@@ -158,7 +158,7 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM']:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -207,6 +207,17 @@ def processing(img, opt, name):
                 transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
                 crop_func,
                 flip_func,
+                transforms.ToTensor(),
+                transforms.Normalize(mean=MEAN[name], std=STD[name]),
+                ])
+    return trans(img)
+
+def processing_CNNSimpest(img, opt, name):
+
+    crop_func = transforms.RandomCrop(opt.CropSize)
+    trans = transforms.Compose([
+                transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
+                crop_func,
                 transforms.ToTensor(),
                 transforms.Normalize(mean=MEAN[name], std=STD[name]),
                 ])

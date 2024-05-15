@@ -253,7 +253,7 @@ class LCAM(nn.Module):
         super(LCAM,self).__init__()
         self.inference = inference
         self.model =  model
-        self.footless = Footless(pretrained=pretrained, start_layer=7)
+        self.footless = Footless(pretrained=pretrained, start_layer=5)
         self.cam_model = resnet50(pretrained=pretrained)
         #for name, param in self.model.named_parameters():
         #    param.requires_grad = False
@@ -262,7 +262,7 @@ class LCAM(nn.Module):
         self.cam_model.to(device)    
         
         self.feature_extractor = create_feature_extractor(
-        	self.model, return_nodes=['fc', 'layer3.5.relu_2']) # This is last layer of layer2 in resnet
+        	self.model, return_nodes=['fc', 'layer1.2.relu_2']) # This is last layer of layer2 in resnet
         
         self.target_layers = [self.model.layer2[-1]] # is === layer2.3.relu_2 
 
@@ -291,7 +291,7 @@ class LCAM(nn.Module):
             x_ref = x
             
         _extractor =  self.feature_extractor(x)
-        feature_extractor = _extractor['layer3.5.relu_2']
+        feature_extractor = _extractor['layer1.2.relu_2']
         label_pre = _extractor['fc']
         layer_feature = self.footless(feature_extractor)
         

@@ -288,7 +288,7 @@ transform = transforms.Compose([
 import os
 from random import choice
 label = ['Fake', 'Real']
-root = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake'
+root = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\0_real'
 root = root.replace('\\', r'/')
 img_list = []
 for a,b,c in os.walk(root):
@@ -308,8 +308,8 @@ for name, layer in model.named_modules():
     
 status_dict = torch.load(r"D:\K32\do_an_tot_nghiep\data\CNNSpot_1isreal_model_epoch_best.pth", map_location=torch.device('cpu'))
 model.load_state_dict(status_dict['model'])
-target_layers = [model.layer4[-1]]
-cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
+target_layers = [model.layer3[-1]]
+cam = HiResCAM(model=model, target_layers=target_layers)
 targets = [ClassifierOutputTarget(0)]
 
 
@@ -342,6 +342,55 @@ res18 = resnet18()
 
 
 plt.imshow(input_image)
+
+
+
+
+
+status_dict['model']['layer4.2.bn3.weight'].shape
+
+torch.min(status_dict['model']['layer4.2.bn3.running_mean'])
+
+
+
+chr(0x3a)
+
+
+
+
+import torch
+import torch.nn as nn
+
+class MyModel(nn.Module):
+    def __init__(self, patch_size):
+        super(MyModel, self).__init__()
+        self.patch_size = patch_size
+        self.unfold = nn.Unfold(kernel_size=patch_size, stride=patch_size)
+
+    def forward(self, x):
+        # Chia ảnh thành các patch
+        unfolded = self.unfold(x)
+        
+        # Sắp xếp lại shape
+        unfolded = unfolded.permute(0, 2, 1).reshape(-1, x.size(1), self.patch_size, self.patch_size)
+        
+        return unfolded
+
+# Sử dụng mô hình
+patch_size = 3
+model = MyModel(patch_size)
+input_tensor = torch.randn(1, 3, 6, 6)  # Tensor đầu vào với kích thước (c, w, h)
+output_tensor = model(input_tensor)
+print(output_tensor.size())  # Kích thước của đầu ra
+
+
+unfold = nn.Unfold(kernel_size=patch_size, stride=patch_size)
+a = unfold(input_tensor)
+a = a.permute(0, 2, 1)
+
+a = a.reshape(-1, input_tensor.size(1), 3, 3)
+
+
 
 
 

@@ -13,6 +13,7 @@ import networks.resnet_gram as ResnetGram
 from networks.Patch5Model import Patch5Model
 from networks.resnet import resnet50
 
+
 from preprocessing_model.guided_diffusion.script_util import (
     NUM_CLASSES,
     model_and_diffusion_defaults,
@@ -23,6 +24,7 @@ from preprocessing_model.guided_diffusion.script_util import (
 ###############################################################################
 from networks.resnet_combine import resnet50_combine
 from networks.resnet_cam import resnet_CAM
+from networks.cnn_simplest import cnn_simpest
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -129,7 +131,15 @@ def get_model(opt):
             resnet = resnet50(num_classes=1, pretrained=False)
             model = resnet_CAM(resnet, pretrained=True, inference=opt.CNNSpot_CAM_inference)
             return model
-            
+        
+    elif opt.detect_method == "CNNSimpest":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if opt.isTrain or opt.isVal:
+            model = cnn_simpest(num_classes=1)
+            return model
+        else:
+            model = cnn_simpest(num_classes=1)
+            return model
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         
