@@ -220,6 +220,7 @@ def processing_CNNSimpest(img, opt, name):
         
     crop_func = transforms.RandomCrop(opt.CropSize)
     trans = transforms.Compose([
+                rz_func,
                 transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
                 crop_func,
                 transforms.ToTensor(),
