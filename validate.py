@@ -112,6 +112,17 @@ def validate(model, opt):
         y_true, y_pred = validate_combine(model, data_loader)
     elif opt.detect_method == "CNNSpot_CAM":           
         y_true, y_pred = validate_cam(model, data_loader)
+    elif opt.detect_method == "Resnet_Metric":
+        # with torch.no_grad():
+        i = 0
+        for img, label in data_loader:
+            i += 1
+            print("batch number {}/{}".format(i, len(data_loader)), end='\r')
+            in_tens = img.cuda()
+            # label = label.cuda()
+            y_pred.extend(model(in_tens).flatten().tolist())
+            y_true.extend(label.flatten().tolist())
+            
     else:
         # with torch.no_grad():
         i = 0

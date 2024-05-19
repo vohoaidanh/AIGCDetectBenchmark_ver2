@@ -25,6 +25,7 @@ from preprocessing_model.guided_diffusion.script_util import (
 from networks.resnet_combine import resnet50_combine
 from networks.resnet_cam import resnet_CAM
 from networks.cnn_simplest import cnn_simpest
+from networks.resnet_metric import resnet_metric
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -140,6 +141,8 @@ def get_model(opt):
         else:
             model = cnn_simpest(num_classes=1)
             return model
+    elif opt.detect_method == "Resnet_Metric":
+        model = resnet_metric()
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         

@@ -97,18 +97,21 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False):
         super(ResNet, self).__init__()
-        self.unfold = nn.Unfold(kernel_size=28, stride=28)
+        self.unfold = nn.Unfold(kernel_size=64, stride=64)
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         #self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64,  layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=1)
+        self.layer2 = self._make_layer(block, 512, layers[1], stride=1)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
+        
+        self.layer_norm = nn.LayerNorm((512, 1, 1))
+
         # print(num_classes)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -146,7 +149,7 @@ class ResNet(nn.Module):
     def forward(self, x):
         unfolded = self.unfold(x)
         unfolded = unfolded.permute(0, 2, 1)
-        unfolded = unfolded.reshape(unfolded.size(0), unfolded.size(1),-1, 28, 28)
+        unfolded = unfolded.reshape(unfolded.size(0), unfolded.size(1),-1, 64, 64)
         
         out = []
         for x in unfolded: 
@@ -158,16 +161,15 @@ class ResNet(nn.Module):
             x = self.layer3(x)
             x = self.layer4(x)
             x = self.avgpool(x)
+            x = self.layer_norm(x)
             x = x.view(x.size(0), -1)
             out.append(x)
         out = torch.stack(out, dim=0)
-        
         out = torch.mean(out, dim=1)
         out = out.view(out.size(0), -1)
         out = self.fc(out)
         return out
 
-    
     
 class CNNBasicBlock(nn.Module):
 
@@ -241,7 +243,7 @@ class CNNSimpest(nn.Module):
 
 
 def cnn_simpest(pretrained=False, **kwargs):
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    model = ResNet(BasicBlock, [2, 2, 2, 1], **kwargs)
     return model
 
 if __name__ == '__main__':
@@ -252,13 +254,5 @@ if __name__ == '__main__':
     input_tensor = torch.randn(2, 3, 112, 112)
     
     out_tensor = model(input_tensor)
-    #out_tensor = out_tensor.view(-1)
-    
-    conv1 = conv3x3(3, 64, 1)
-    out = conv1(input_tensor)    
+ 
 
-
-    
-    
-    
-   

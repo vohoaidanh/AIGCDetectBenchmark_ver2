@@ -390,12 +390,18 @@ a = a.permute(0, 2, 1)
 
 a = a.reshape(-1, input_tensor.size(1), 3, 3)
 
-
-
-
-
 image = Image.open(r'images/dog.jpg')
 image.size[0] > 611
 
+import os
+os.path.dirname(r'a/images/dog.jpg')
 
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+im = Image.open(r"C:\Users\danhv\Downloads\noise.jpg")
+im = np.asarray(im)
+plt.imshow(im)
+
+np.sum(im)
 
