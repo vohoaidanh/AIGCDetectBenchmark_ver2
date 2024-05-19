@@ -527,8 +527,11 @@ class read_data():
                 img = Image.fromarray(noise_data) 
             img = processing(img,self.opt,'imagenet')
         
-        elif self.opt.detect_method in ["CNNSimpest", "Resnet_Metric"]:
+        elif self.opt.detect_method in ["CNNSimpest"]:
             img = processing_CNNSimpest(img,self.opt,'imagenet')
+            
+        elif self.opt.detect_method in ["Resnet_Metric"]:
+            img = processing_Resnet_Metric(img, self.opt, 'imagenet')
             
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")

@@ -215,7 +215,9 @@ class Resnet_Metric(nn.Module):
         return imgs[idx[0]].unsqueeze(0), imgs[idx[1]].unsqueeze(0)
     
     def forward(self,x):
-        x1, x2 = self.__crop_input(x)
+        x1 = x[0]
+        x2 = x[1]
+        #x1, x2 = self.__crop_input(x)
         x1 = self.encoder(x1)
         x1 = x1.view(x1.size(0), -1)
         x1 = self.projector(x1)
@@ -228,6 +230,14 @@ class Resnet_Metric(nn.Module):
 
         cosine_similarity = F.cosine_similarity(x1, x2)
         return cosine_similarity
+    
+    def get_parameters_to_optimize(self, target_model_names = ['encoder', 'projector']):
+        parameters_to_update = []
+        for name, param in self.named_parameters():
+            if any(target_model_name in name for target_model_name in target_model_names):
+                parameters_to_update.append(param)
+        return parameters_to_update
+    
 
 def resnet_metric(pretrained = False):
     model = Resnet_Metric()
@@ -241,8 +251,9 @@ if __name__ == '__main__':
     from PIL import Image
     from torchvision import transforms
     
-    model = resnet_metric(pretrained=True)
-    
+    model = resnet_metric(pretrained=False)
+
+    pars = model.get_parameters_to_optimize()    
     
     img = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake\6e59c694-14cd-4e7a-a3c3-992c5e044dcc.jpg")
     
@@ -257,14 +268,6 @@ if __name__ == '__main__':
     out = model(x)
     print(out)
    
-
-
-
-
-
-
-
-
 
 
 

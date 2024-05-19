@@ -158,7 +158,7 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest']:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest', "Resnet_Metric"]:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -228,6 +228,41 @@ def processing_CNNSimpest(img, opt, name):
                 ])
     
     return trans(img)
+
+def processing_Resnet_Metric(img, opt, name):
+    if img.size[0] < opt.CropSize or img.size[1] < opt.CropSize:
+        rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+    else:
+        rz_func =  transforms.Lambda(lambda img: img)
+        
+    crop_func = transforms.RandomCrop(opt.CropSize)
+    trans = transforms.Compose([
+                rz_func,
+                transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
+                crop_func,
+                transforms.ToTensor(),
+                transforms.Normalize(mean=MEAN[name], std=STD[name]),
+                ])
+    
+    img = trans(img)
+    
+    _, height, width = img.shape
+    
+    # Calculate the center of the image
+    center_height = height // 2
+    center_width = width // 2
+    
+    # Crop the image tensor into four equal parts
+    top_left = img[:, :center_height, :center_width]
+    top_right = img[:, :center_height, center_width:]
+    bottom_left = img[:, center_height:, :center_width]
+    bottom_right = img[:, center_height:, center_width:]
+    
+    # Return the four cropped image tensors
+    idx = np.random.choice(range(0,4), size = 2, replace=False)
+    imgs = [top_left, top_right, bottom_left, bottom_right]
+    
+    return (imgs[idx[0]].unsqueeze(0), imgs[idx[1]].unsqueeze(0))
 
 def processing_DER(img, opt, name):
 

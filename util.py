@@ -143,6 +143,7 @@ def get_model(opt):
             return model
     elif opt.detect_method == "Resnet_Metric":
         model = resnet_metric()
+        return model
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         

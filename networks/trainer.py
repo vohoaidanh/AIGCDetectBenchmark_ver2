@@ -27,7 +27,7 @@ class Trainer(BaseModel):
             # initialize optimizers
             
             
-            if self.opt.detect_method == 'CNNSpot_CAM':
+            if self.opt.detect_method in ['CNNSpot_CAM', 'Resnet_Metric']:
                 params = self.model.get_parameters_to_optimize()
             
             elif self.opt.detect_method == "UnivFD" and self.opt.fix_backbone:
