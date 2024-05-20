@@ -531,7 +531,8 @@ class read_data():
             img = processing_CNNSimpest(img,self.opt,'imagenet')
             
         elif self.opt.detect_method in ["Resnet_Metric"]:
-            img = processing_Resnet_Metric(img, self.opt, 'imagenet')
+            #img = processing_Resnet_Metric(img, self.opt, 'imagenet')
+            img = processing_DCT(img,self.opt)
             
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")

@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn.functional as F
 
 
-__all__ = ['resnet18']
+__all__ = ['resnet18', 'cosine_similarity_loss']
 
 
 model_urls = {
@@ -229,7 +229,7 @@ class Resnet_Metric(nn.Module):
         x2 = F.normalize(x2, p=2, dim=-1)  # L2 normalization
 
         cosine_similarity = F.cosine_similarity(x1, x2)
-        return cosine_similarity
+        return (cosine_similarity.unsqueeze(1) + 1.0)/2.0
     
     def get_parameters_to_optimize(self, target_model_names = ['encoder', 'projector']):
         parameters_to_update = []
@@ -244,10 +244,19 @@ def resnet_metric(pretrained = False):
     if pretrained:
         model.resnet18.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
     return model
-        
+
+def cosine_similarity_loss(cosine_sim, target, margin=0.0):
+  
+    # Adjust target from 0 to -1 for dissimilar pairs
+    adjusted_target = 2 * target - 1  # Convert 1 to 1, and 0 to -1
+    cosine_sim = cosine_sim * 2.0 - 1.0
+    # Compute the loss 
+    loss = (1 - adjusted_target) * F.relu(cosine_sim - margin) + adjusted_target * (1.0 - cosine_sim)
+    return torch.mean(loss)
+
+
 
 if __name__ == '__main__':
-
     from PIL import Image
     from torchvision import transforms
     
@@ -268,8 +277,3 @@ if __name__ == '__main__':
     out = model(x)
     print(out)
    
-
-
-
-
-

@@ -34,12 +34,12 @@ from data.datasets import read_data_combine
 from data import create_dataloader_new,create_dataloader
 
 opt = TrainOptions().parse()
-opt.dataroot = r'E:\RealFakeDB512'
+opt.dataroot = r'D:\dataset\real_gen_dataset'
 opt.dataroot2 = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
 opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.val_split)
-opt.batch_size = 8
+opt.batch_size = 1
 opt.method_combine = None#'CNNSpot+FreDect'
-opt.detect_method = 'CNNSpot_CAM'
+opt.detect_method = 'Resnet_Metric'
 opt.isTrain
 
 data_loader = create_dataloader_new(opt)
@@ -49,6 +49,28 @@ for i in data_loader:
     m=i
     break
 
+from PIL import Image
+from torchvision import transforms
+from networks.resnet_metric import resnet_metric
+model = resnet_metric(pretrained=False)
+
+out = model(m[0])
+out = out.unsqueeze(1)
+out = out.squeeze(1)
+pars = model.get_parameters_to_optimize()    
+
+img = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake\6e59c694-14cd-4e7a-a3c3-992c5e044dcc.jpg")
+
+transform = transforms.Compose([
+    transforms.Resize(224),                      # Chuyển kích thước ảnh về kích thước mong muốn
+    transforms.ToTensor(),                              # Chuyển đổi ảnh thành tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],    # Chuẩn hóa giá trị pixel theo mean và std của ImageNet
+                         std=[0.229, 0.224, 0.225])
+])
+
+x = transform(img)
+out = model(x)
+print(out)
 
 import matplotlib.pyplot as plt
 
@@ -399,9 +421,23 @@ os.path.dirname(r'a/images/dog.jpg')
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-im = Image.open(r"C:\Users\danhv\Downloads\noise.jpg")
-im = np.asarray(im)
-plt.imshow(im)
+im = Image.open(r"D:\dataset\real_gen_dataset\val\0_real\000613338.jpg")
+im1 = im.crop((0,0,224,224))
+im2 = im.crop((224,224,224*2,224*2))
 
-np.sum(im)
+
+
+from data.process import processing_DCT
+opt.dct_mean = torch.load('./weights/auxiliary/dct_mean').permute(1,2,0).numpy()
+opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
+im_dct1 = processing_DCT(im1, opt)
+im_dct2 = processing_DCT(im2, opt)
+
+plt.imshow(im_dct1.permute(1,2,0))
+plt.imshow(im_dct2.permute(1,2,0))
+
+
+
+
+
 

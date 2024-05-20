@@ -116,9 +116,10 @@ def validate(model, opt):
         # with torch.no_grad():
         i = 0
         for img, label in data_loader:
+            img = (img[0].cuda(), img[1].cuda())
             i += 1
             print("batch number {}/{}".format(i, len(data_loader)), end='\r')
-            in_tens = img.cuda()
+            in_tens = img
             # label = label.cuda()
             y_pred.extend(model(in_tens).flatten().tolist())
             y_true.extend(label.flatten().tolist())

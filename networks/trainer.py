@@ -23,7 +23,7 @@ class Trainer(BaseModel):
             self.model = resnet50(num_classes=1)
 
         if self.isTrain:
-            self.loss_fn = nn.BCEWithLogitsLoss()
+            self.loss_fn = self.set_loss(opt)
             # initialize optimizers
             
             
@@ -57,7 +57,7 @@ class Trainer(BaseModel):
             self.load_networks(opt.epoch)
         self.model.to(self.device)
 
-
+    
     def adjust_learning_rate(self, min_lr=1e-6):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] /= 10.
@@ -82,6 +82,11 @@ class Trainer(BaseModel):
             self.input = input[0].to(self.device)
             self.input2 = input[1].to(self.device)
             self.label = input[2].to(self.device).float() #(batch_size)
+            
+        elif self.opt.detect_method == "Resnet_Metric":
+            self.input = (input[0][0].to(self.device), input[0][1].to(self.device))
+            self.label = input[1].to(self.device).float() #(batch_size)
+            
         else:
             self.input = input[0].to(self.device)
             self.label = input[1].to(self.device).float()
@@ -102,6 +107,13 @@ class Trainer(BaseModel):
 
     def get_loss(self):
         return self.loss_fn(self.output.squeeze(1), self.label)
+    
+    def set_loss(self, opt):
+        if opt.detect_method == "Resnet_Metric":
+            from networks.resnet_metric import cosine_similarity_loss
+            loss_fn = cosine_similarity_loss
+            return loss_fn
+        return nn.BCEWithLogitsLoss()
 
     def optimize_parameters(self):
         self.forward()

@@ -153,12 +153,12 @@ def get_processing_model(opt):
         opt.diffusion_model=diffusion_model
         opt.diffusion=diffusion
         
-    elif opt.detect_method =='FreDect':
+    elif opt.detect_method in ['FreDect', 'Resnet_Metric']:
         opt.dct_mean = torch.load('./weights/auxiliary/dct_mean').permute(1,2,0).numpy()
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest', "Resnet_Metric"]:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -262,7 +262,7 @@ def processing_Resnet_Metric(img, opt, name):
     idx = np.random.choice(range(0,4), size = 2, replace=False)
     imgs = [top_left, top_right, bottom_left, bottom_right]
     
-    return (imgs[idx[0]].unsqueeze(0), imgs[idx[1]].unsqueeze(0))
+    return (imgs[idx[0]], imgs[idx[1]])
 
 def processing_DER(img, opt, name):
 
