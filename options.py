@@ -60,6 +60,8 @@ class TrainOptions():
         
         parser.add_argument('--method_combine', type=str,default=None, help='example combine CNNSpot+FreDect')
         parser.add_argument('--dataroot2', default=None, help='root for Second  dataset')
+        parser.add_argument('--pos_label', type=str,default='1_fake', help='positive label default is 1_fake')
+
 
 
 
@@ -170,6 +172,7 @@ class TestOptions():
         
         parser.add_argument('--method_combine', type=str,default=None, help='example combine CNNSpot+FreDect')
         parser.add_argument('--dataroot2', default=None, help='root for Second  dataset')
+        parser.add_argument('--pos_label', type=str,default='1_fake', help='positive label default is 1_fake')
 
         self.initialized = True
 

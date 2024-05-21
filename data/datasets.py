@@ -484,10 +484,16 @@ class read_data():
     def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
-        real_img_list = loadpathslist(self.root,'0_real')    
-        real_label_list = [0 for _ in range(len(real_img_list))]
+        real_img_list = loadpathslist(self.root,'0_real')
+        
+        if opt.pos_label == '1_fake':
+            real_value, fake_value = 0, 1
+        else:
+            real_value, fake_value = 1, 0
+            
+        real_label_list = [real_value for _ in range(len(real_img_list))]
         fake_img_list = loadpathslist(self.root,'1_fake')
-        fake_label_list = [1 for _ in range(len(fake_img_list))]
+        fake_label_list = [fake_value for _ in range(len(fake_img_list))]
         self.img = real_img_list+fake_img_list
         self.label = real_label_list+fake_label_list
 
