@@ -436,8 +436,40 @@ im_dct2 = processing_DCT(im2, opt)
 plt.imshow(im_dct1.permute(1,2,0))
 plt.imshow(im_dct2.permute(1,2,0))
 
+opt.dct_mean.shape
+
+import torch.nn.functional as F
+
+anchor = torch.rand((1,100))
+contrast_feature = torch.rand((1,100))
+F.cosine_similarity(anchor, contrast_feature, dim=1)
+
+a = torch.tensor([[0.0, 1.0]])
+b = torch.tensor([[1.0, -1.0]])
+F.cosine_similarity(a, b, dim=1)
 
 
 
+import torch
+
+# Create two batches of matrices
+batch_size = 2
+n, m, p = 3, 4, 5
+
+# First batch of matrices (batch_size, n, m)
+input = torch.randn(batch_size, n, m)
+
+# Second batch of matrices (batch_size, m, p)
+mat2 = torch.randn(batch_size, m, p)
+
+# Perform batch matrix multiplication
+output = torch.bmm(input, mat2)
+
+print("Input batch:", input)
+print("Second batch:", mat2)
+print("Output batch:", output)
+input.shape
+mat2.shape
+output.shape
 
 

@@ -503,7 +503,7 @@ class read_data():
             img = custom_augment(img, self.opt)
       
       
-        if self.opt.detect_method in ['CNNSpot','Gram','Steg', 'CNNSpot_CAM']:
+        if self.opt.detect_method in ['CNNSpot','Gram','Steg', 'CNNSpot_CAM', 'Resnet_Attention']:
             img = processing(img,self.opt,'imagenet')
         elif self.opt.detect_method == 'FreDect':
             img = processing_DCT(img,self.opt)
@@ -532,7 +532,7 @@ class read_data():
             
         elif self.opt.detect_method in ["Resnet_Metric"]:
             #img = processing_Resnet_Metric(img, self.opt, 'imagenet')
-            img = processing_DCT(img,self.opt)
+            img = processing_Resnet_Metric_DCT(img, self.opt, 'imagenet')
             
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")

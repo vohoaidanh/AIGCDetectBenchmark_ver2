@@ -26,6 +26,7 @@ from networks.resnet_combine import resnet50_combine
 from networks.resnet_cam import resnet_CAM
 from networks.cnn_simplest import cnn_simpest
 from networks.resnet_metric import resnet_metric
+from networks.resnet_attention import resnet_attention
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -144,6 +145,19 @@ def get_model(opt):
     elif opt.detect_method == "Resnet_Metric":
         model = resnet_metric()
         return model
+    elif opt.detect_method == "Resnet_Attention":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if opt.isTrain or opt.isVal:
+            resnet = resnet50(num_classes=1, pretrained=False)
+            state_dict = torch.load(opt.model_path_trained, map_location=device)
+            model = resnet_attention(resnet)
+            model.model.load_state_dict(state_dict['model'])
+            return model
+        else:
+            resnet = resnet50(num_classes=1, pretrained=False)
+            model = resnet_attention(resnet)
+
+        
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         
