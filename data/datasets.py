@@ -22,6 +22,9 @@ from .process import *
 import copy
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+#Mean: tensor([0.4961, 0.4607, 0.4350])
+#Std: tensor([0.2461, 0.2345, 0.2351])
+
 def dataset_folder(opt, root):
     if opt.mode == 'binary':
         return binary_dataset(opt, root)

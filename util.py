@@ -148,14 +148,13 @@ def get_model(opt):
     elif opt.detect_method == "Resnet_Attention":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if opt.isTrain or opt.isVal:
-            resnet = resnet50(num_classes=1, pretrained=False)
             state_dict = torch.load(opt.model_path_trained, map_location=device)
-            model = resnet_attention(resnet)
+            model = resnet_attention()
             model.model.load_state_dict(state_dict['model'])
             return model
         else:
-            resnet = resnet50(num_classes=1, pretrained=False)
-            model = resnet_attention(resnet)
+            model = resnet_attention()
+            return model
 
         
     else:

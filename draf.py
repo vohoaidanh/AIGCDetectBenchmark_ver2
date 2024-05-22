@@ -18,7 +18,7 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406],    # Chuẩn hóa giá trị pixel theo mean và std của ImageNet
                          std=[0.229, 0.224, 0.225])
 ])
-
+ 
 input_image = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\1_fake\0d24cf0c-769f-459f-b291-c89effa9283a.jpg")
 input_image_tens = transform(input_image)
 input_image_tens = input_image_tens.unsqueeze(0)
@@ -450,26 +450,21 @@ F.cosine_similarity(a, b, dim=1)
 
 
 
-import torch
 
-# Create two batches of matrices
-batch_size = 2
-n, m, p = 3, 4, 5
+transform = transforms.Compose([
+    transforms.Resize(112),                      # Chuyển kích thước ảnh về kích thước mong muốn
+    transforms.Resize(512),                      # Chuyển kích thước ảnh về kích thước mong muốn
 
-# First batch of matrices (batch_size, n, m)
-input = torch.randn(batch_size, n, m)
+])
+ 
 
-# Second batch of matrices (batch_size, m, p)
-mat2 = torch.randn(batch_size, m, p)
+img = Image.open(r'images/dog.jpg')
 
-# Perform batch matrix multiplication
-output = torch.bmm(input, mat2)
 
-print("Input batch:", input)
-print("Second batch:", mat2)
-print("Output batch:", output)
-input.shape
-mat2.shape
-output.shape
+transform(img)
+
+
+
+
 
 

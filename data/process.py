@@ -158,7 +158,7 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest']:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest','Resnet_Attention']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -187,8 +187,16 @@ def custom_resize(img, opt):
 
 
 def processing(img, opt, name):
+    brightness = (0.8, 1.2)  # Randomly change brightness by a factor of 0.8 to 1.2
+    contrast = (0.8, 1.2)    # Randomly change contrast by a factor of 0.8 to 1.2
+    saturation = (0.8, 1.2)  # Randomly change saturation by a factor of 0.8 to 1.2
+    hue = (-0.1, 0.1)        # Randomly change hue by a factor of -0.1 to 0.1
+    
+    color_func = transforms.Lambda(lambda img: img)
+    
     if opt.isTrain:
         crop_func = transforms.RandomCrop(opt.CropSize)
+        #color_func = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
     elif opt.no_crop:
         crop_func = transforms.Lambda(lambda img: img)
     else:
@@ -204,6 +212,7 @@ def processing(img, opt, name):
         rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
     trans = transforms.Compose([
                 rz_func,
+                color_func,
                 transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
                 crop_func,
                 flip_func,
@@ -354,13 +363,17 @@ def processing_DER(img, opt, name):
 
 
 MEAN = {
-    "imagenet":[0.485, 0.456, 0.406],
-    "clip":[0.48145466, 0.4578275, 0.40821073]
+    #"imagenet":[0.485, 0.456, 0.406],
+    "clip":[0.48145466, 0.4578275, 0.40821073],
+    #Mean: tensor([0.4961, 0.4607, 0.4350])
+    #Std: tensor([0.2461, 0.2345, 0.2351])
+    "imagenet":[0.4961, 0.4607, 0.4350],
 }
 
 STD = {
-    "imagenet":[0.229, 0.224, 0.225],
-    "clip":[0.26862954, 0.26130258, 0.27577711]
+    #"imagenet":[0.229, 0.224, 0.225],
+    "clip":[0.26862954, 0.26130258, 0.27577711],
+    "imagenet":[0.2461, 0.2345, 0.2351],
 }
 
 

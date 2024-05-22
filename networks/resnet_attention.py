@@ -224,14 +224,17 @@ class RestAttention(nn.Module):
         #    param.requires_grad = False
         self.model.to(device)
         self.conv1 = conv1x1(512,64)
+        self.conv2 = conv1x1(1024,64)
+        self.linear1 = nn.Linear(64*28*28, 64*14*14)
 
         self.feature_extractor = create_feature_extractor(
-        	self.model, return_nodes=['fc', 'layer2.3.relu_2']) # This is last layer of layer2 in resnet
+        	self.model, return_nodes=['fc', 'layer2.3.relu_2', 'layer3.5.relu_2']) # This is last layer of layer2 in resnet
 
-        self.attn = SelfAttention(n_channels=64)        
+        self.attn = SelfAttention(n_channels=64)      
+        self.attn2 = SelfAttention(n_channels=64) 
                 
         self.head = nn.Sequential(
-            nn.Linear(64*28*28, 2048), 
+            nn.Linear(64*14*14*2, 2048), 
             nn.ReLU(inplace=False), 
             nn.Dropout(p=0.3),
             nn.Linear(2048, 1)
@@ -250,15 +253,30 @@ class RestAttention(nn.Module):
         feature_extractor = self.conv1(feature_extractor)
         batch_size, c, w, h = feature_extractor.shape
         feature_extractor = feature_extractor.view((batch_size, c, -1))
+        #print('feature_extractor========',feature_extractor.shape)
+        
+         
+        feature_extractor2 = self.conv2(_extractor['layer3.5.relu_2'])
+        batch_size2, c2, w2, h2 = feature_extractor2.shape
+        feature_extractor2 = feature_extractor2.view((batch_size2, c2, -1))
+        #print('feature_extractor2========',feature_extractor2.shape)
+       
 
         #print('feature_extractor=====', feature_extractor.shape)
-        output = self.attn(feature_extractor)
-        output = output.view((batch_size, -1))
-        output = self.head(output)
+        attn1 = self.attn(feature_extractor)
+        attn2 = self.attn2(feature_extractor2)
+        
+        attn1 = attn1.view((batch_size, -1))
+        attn2 = attn2.view((batch_size2, -1))
+        attn1 = self.linear1(attn1)
+        attn1 = F.softmax(attn1, dim=1)
+        #combined_tensor = (attn1 + attn2) / 2        
+        combined_tensor = torch.cat((attn1, attn2), dim=1)
+        output = self.head(combined_tensor)
         #output = feature_extractor
         return output
     
-    def get_parameters_to_optimize(self, target_model_names = ['attn', 'head']):
+    def get_parameters_to_optimize(self, target_model_names = ['attn','attn2', 'head', 'conv1','conv2','linear1']):
         parameters_to_update = []
         for name, param in self.named_parameters():
             if any(target_model_name in name for target_model_name in target_model_names):
@@ -277,7 +295,7 @@ def resnet50(pretrained=False, **kwargs):
     return model
 
 def resnet_attention():
-    resnet = resnet50()
+    resnet = resnet50(num_classes=1, pretrained=False)
     model = RestAttention(resnet)
     return model
 
@@ -289,9 +307,25 @@ if __name__ == '__main__':
     in_tensor = torch.rand((2,3,224,224))
     out_tensor = model(in_tensor)
     
-    out_tensor.shape
+# =============================================================================
+#     out_tensor.shape
+#     
+#     for name, param in model.named_parameters():
+#         print(f"Name: {name}, Shape: {param.shape}")
+# 
+# =============================================================================
 
     
+
+
+
+
+
+
+
+
+
+
 
 
 
