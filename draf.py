@@ -448,20 +448,111 @@ a = torch.tensor([[0.0, 1.0]])
 b = torch.tensor([[1.0, -1.0]])
 F.cosine_similarity(a, b, dim=1)
 
+import os
+from PIL import Image
+from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
 
+class CustomImageDataset(Dataset):
+    def __init__(self, real_dir, fake_dir, transform=None):
+        self.real_images = [os.path.join(real_dir, img) for img in os.listdir(real_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
+        self.fake_images = [os.path.join(fake_dir, img) for img in os.listdir(fake_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
+        self.all_images = self.real_images + self.fake_images
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.all_images)
+
+    def __getitem__(self, idx):
+        img_path = self.all_images[idx]
+        image = Image.open(img_path).convert('RGB')
+        image = image.quantize().convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+        return image, os.path.dirname(img_path), os.path.basename(img_path)
+    
+
+real_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset/val/0_real'
+fake_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset/val/1_fake'
+
+dataset = CustomImageDataset(real_image_path, fake_image_path)
 
 
 transform = transforms.Compose([
-    transforms.Resize(112),                      # Chuyển kích thước ảnh về kích thước mong muốn
-    transforms.Resize(512),                      # Chuyển kích thước ảnh về kích thước mong muốn
+    #transforms.RandomCrop(224),
+    transforms.Resize(5),                      # Chuyển kích thước ảnh về kích thước mong muốn
+    transforms.Resize(256),                      # Chuyển kích thước ảnh về kích thước mong muốn
 
 ])
  
 
-img = Image.open(r'images/dog.jpg')
-
-
+#img = Image.open(r'D:\Downloads\image/dog2.jpg').convert('RGB')
+img, label, _ = dataset[np.random.randint(0, len(dataset))]
 transform(img)
+print('image is: ', label[-4:])
+
+  
+# Importing Image module from PIL package  
+from PIL import Image, ImageOps  
+import PIL  
+import numpy as np
+
+# creating a image object (main image)  
+im1= Image.open(r'images/dog.jpg').convert('RGB')
+im1 = im1.resize((10,10))
+im1 = im1.resize((512,512))
+im1_arr = np.asarray(im1)
+
+
+
+
+import os
+from PIL import Image
+from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
+
+class CustomImageDataset(Dataset):
+    def __init__(self, real_dir, fake_dir, transform=None):
+        self.real_images = [os.path.join(real_dir, img) for img in os.listdir(real_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
+        self.fake_images = [os.path.join(fake_dir, img) for img in os.listdir(fake_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
+        self.all_images = self.real_images + self.fake_images
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.all_images)
+
+    def __getitem__(self, idx):
+        img_path = self.all_images[idx]
+        image = Image.open(img_path).convert('RGB')
+        image = image.quantize().convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+        return image, os.path.dirname(img_path), os.path.basename(img_path)
+    
+
+real_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset/val/0_real'
+fake_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset/val/1_fake'
+
+dataset = CustomImageDataset(real_image_path, fake_image_path)
+
+
+from tqdm import tqdm
+for i in tqdm(range(len(dataset))):
+    image, img_path, img_name = dataset[i]
+    new_dir = img_path.replace('real_gen_dataset', 'real_gen_dataset_quantize')
+    os.makedirs(new_dir, exist_ok = True)
+    image.save(os.path.join(new_dir, img_name))
+
+
+
+
+img = np.random.random_integers(0,255,(3,3))
+img1 = Image.fromarray(img)
+img2 = img1.resize((2,2),Image.BICUBIC)
+img3 = np.asarray(img2)
+
+
+
 
 
 

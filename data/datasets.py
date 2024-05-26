@@ -482,12 +482,13 @@ class read_data_cam():
         else:
             return len(self.real_img_list)
     
-    
+Extension = ('jpg', 'png', 'jpeg', 'webp', 'tif')   
 class read_data():
     def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
         real_img_list = loadpathslist(self.root,'0_real')
+        real_img_list = [i for i in real_img_list if i.endswith(Extension)]
         
         if opt.pos_label == '1_fake':
             real_value, fake_value = 0, 1
@@ -496,6 +497,8 @@ class read_data():
             
         real_label_list = [real_value for _ in range(len(real_img_list))]
         fake_img_list = loadpathslist(self.root,'1_fake')
+        fake_img_list = [i for i in fake_img_list if i.endswith(Extension)]
+
         fake_label_list = [fake_value for _ in range(len(fake_img_list))]
         self.img = real_img_list+fake_img_list
         self.label = real_label_list+fake_label_list
@@ -543,6 +546,9 @@ class read_data():
             #img = processing_Resnet_Metric(img, self.opt, 'imagenet')
             img = processing_Resnet_Metric_DCT(img, self.opt, 'imagenet')
             
+        elif self.opt.detect_method in ["Resnet_Multiscale"]:
+            #img = processing_Resnet_Metric(img, self.opt, 'imagenet')
+            img = processing_Resnet_Multiscale(img, self.opt, 'imagenet')
         else:
             raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
 

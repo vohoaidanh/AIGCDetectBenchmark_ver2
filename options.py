@@ -62,6 +62,7 @@ class TrainOptions():
         parser.add_argument('--dataroot2', default=None, help='root for Second  dataset')
         parser.add_argument('--pos_label', type=str,default='1_fake', help='positive label default is 1_fake')
 
+        parser.add_argument('--eval', action='store_true', help='run eval if True')
 
 
 

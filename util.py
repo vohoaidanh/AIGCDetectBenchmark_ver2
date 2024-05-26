@@ -27,6 +27,7 @@ from networks.resnet_cam import resnet_CAM
 from networks.cnn_simplest import cnn_simpest
 from networks.resnet_metric import resnet_metric
 from networks.resnet_attention import resnet_attention
+from networks.resnet_multiscale import resnet50_multiscale
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -156,7 +157,10 @@ def get_model(opt):
             model = resnet_attention()
             return model
 
-        
+    elif opt.detect_method == "Resnet_Multiscale":
+        model = resnet50_multiscale(pretrained=True, num_classes=1)
+        return model
+    
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
         

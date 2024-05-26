@@ -7,7 +7,7 @@ class CustomImageDataset(Dataset):
     def __init__(self, real_dir, fake_dir, transform=None):
         self.real_images = [os.path.join(real_dir, img) for img in os.listdir(real_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
         self.fake_images = [os.path.join(fake_dir, img) for img in os.listdir(fake_dir) if img.endswith(('jpg', 'png', 'jpeg'))]
-        self.all_images = self.fake_images# self.real_images + self.fake_images
+        self.all_images =  self.real_images# + self.fake_images
         self.transform = transform
 
     def __len__(self):
@@ -22,8 +22,8 @@ class CustomImageDataset(Dataset):
 
 
 # Define the paths to your datasets
-real_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\0_real'
-fake_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\1_fake'
+real_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset_quantize\train\0_real'
+fake_image_path = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset_quantize\train\1_fake'
 
 # Define a transform to resize and convert images to tensors
 transform = transforms.Compose([
@@ -31,11 +31,12 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
+
 # Create the custom dataset
 dataset = CustomImageDataset(real_image_path, fake_image_path, transform=transform)
 
 # Create a DataLoader to iterate through the dataset
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
+dataloader = DataLoader(dataset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True)
 
 
 import torch
@@ -67,6 +68,14 @@ if __name__ == '__main__':
     mean, std = calculate_mean_std(dataloader)
     print(f"Mean: {mean}")
     print(f"Std: {std}")
+    
+
+
+
+
+
+
+
 
 
 

@@ -221,6 +221,48 @@ def processing(img, opt, name):
                 ])
     return trans(img)
 
+
+def processing_Resnet_Multiscale(img, opt, name):
+    
+    #brightness = (0.8, 1.2)  # Randomly change brightness by a factor of 0.8 to 1.2
+    #contrast = (0.8, 1.2)    # Randomly change contrast by a factor of 0.8 to 1.2
+    #saturation = (0.8, 1.2)  # Randomly change saturation by a factor of 0.8 to 1.2
+    #hue = (-0.1, 0.1)        # Randomly change hue by a factor of -0.1 to 0.1
+    
+    if opt.isTrain:
+        crop_func = transforms.RandomCrop(opt.CropSize)
+        #color_func = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+    elif opt.no_crop:
+        crop_func = transforms.Lambda(lambda img: img)
+    else:
+        crop_func = transforms.CenterCrop(opt.CropSize)
+
+    if opt.isTrain and not opt.no_flip:
+        flip_func = transforms.RandomHorizontalFlip()
+    else:
+        flip_func = transforms.Lambda(lambda img: img)
+    if not opt.isTrain and opt.no_resize:
+        rz_func = transforms.Lambda(lambda img: img)
+    else:
+        rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+    
+    def create_transform(name, opt, resize=1):
+        return transforms.Compose([
+            transforms.Resize(resize),
+            rz_func,
+            transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
+            crop_func,
+            flip_func,
+            transforms.ToTensor(),
+            transforms.Normalize(mean=MEAN[name], std=STD[name]),
+        ])
+    
+    trans = [create_transform(name, opt, resize) for resize in [1, 5, 11]]
+    transformed_images = [t(img) for t in trans]
+    stacked_images = torch.cat(transformed_images, dim=0)
+    return stacked_images
+
+
 def processing_CNNSimpest(img, opt, name):
     if img.size[0] < opt.CropSize or img.size[1] < opt.CropSize:
         rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
@@ -604,3 +646,41 @@ def create_mask(img, shading, thres=128, background=False):
     img_arr = np.array(img)
     mask = Image.fromarray(img_arr * im_sd_arr)
     return mask
+
+
+
+if __name__ == '__main__':
+    from options import TrainOptions        
+    from PIL import Image
+    import numpy as np
+    opt = TrainOptions().parse()
+    opt.dataroot = r'D:\dataset\real_gen_dataset'
+    opt.dataroot2 = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'
+    opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.val_split)
+    opt.batch_size = 1
+    opt.method_combine = None#'CNNSpot+FreDect'
+    opt.detect_method = 'Resnet_Metric'
+    opt.isTrain
+    
+    img = Image.open(r'D:/K32/do_an_tot_nghiep/AIGCDetectBenchmark/images/dog.jpg')
+    
+    trans = processing_Resnet_Multiscale(img, opt, 'imagenet')
+
+
+    a = np.asarray(trans[:3,:,:])
+    a = a.transpose((1,2,0))
+    a = (a -np.min(a))*255.0/np.max(a)
+    a = np.asarray(a, dtype='uint8')
+    Image.fromarray(a)
+
+
+    
+
+
+    
+
+
+
+
+
+

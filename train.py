@@ -155,6 +155,41 @@ if __name__ == '__main__':
         val_writer.add_scalar('accuracy', acc, model.total_steps)
         val_writer.add_scalar('ap', ap, model.total_steps)
         print("(Val @ epoch {}) acc: {}; ap: {}; TPR: {}; TNR: {}".format(epoch, acc, ap, TPR, TNR))
+        
+        ################################################################################################
+        #evaluation on testset
+        if opt.eval:
+            import eval_config 
+            test_opt = get_val_opt()
+            #test_opt = TestOptions().parse(print_options=False) #获取参数类
+            test_opt.detect_method = opt.detect_method
+            test_opt.num_threads = opt.num_threads
+            test_opt.batch_size = opt.batch_size
+            test_opt.pos_label = opt.pos_label 
+            test_opt.dataroot = '{}/{}'.format(eval_config.dataroot, eval_config.vals[0])
+    
+            model.eval()
+            #acc, ap = validate(model.model, val_opt)[:2]
+            acc, ap, val_conf_mat  = validate(model.model, test_opt)[:3]
+            
+            TP = val_conf_mat[1, 1]
+            TN = val_conf_mat[0, 0]
+            FP = val_conf_mat[0, 1]
+            FN = val_conf_mat[1, 0]
+            
+            TPR = TP / (TP + FN)
+            TNR = TN / (TN + FP)
+            
+            print("(Cross_test @ epoch {}) acc: {}; ap: {}; TPR: {}; TNR: {}".format(epoch, acc, ap, TPR, TNR))
+            if opt.comet:
+                experiment.log_metric('cross_test/epoch_acc', acc, epoch=epoch)
+                experiment.log_metric('cross_test/TPR', TPR, epoch=epoch)
+                experiment.log_metric('cross_test/TNR', TNR, epoch=epoch)
+                file_name = "epoch_{}_cross_test_{}.json".format(epoch, comet_train_params['name'])
+                experiment.log_confusion_matrix(matrix = val_conf_mat, file_name=file_name, epoch=epoch)
+
+        ################################################################################################
+        
         if opt.comet:
             experiment.log_metric('val/epoch_acc', acc, epoch=epoch)
             experiment.log_metric('val/TPR', TPR, epoch=epoch)
