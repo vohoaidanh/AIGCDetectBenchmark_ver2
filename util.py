@@ -12,6 +12,7 @@ import networks.univfd_models as univfd_models
 import networks.resnet_gram as ResnetGram
 from networks.Patch5Model import Patch5Model
 from networks.resnet import resnet50
+from networks.swin_transformer import swin_transformer_model
 
 
 from preprocessing_model.guided_diffusion.script_util import (
@@ -160,6 +161,11 @@ def get_model(opt):
     elif opt.detect_method == "Resnet_Multiscale":
         model = resnet50_multiscale(pretrained=True, num_classes=1)
         return model
+    
+    elif opt.detect_method == "SwinTransformer":
+        model = swin_transformer_model(pretrained=True, num_classes=1)
+        return model
+    
     
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")

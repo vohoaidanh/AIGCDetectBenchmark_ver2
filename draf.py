@@ -555,6 +555,21 @@ img3 = np.asarray(img2)
 
 
 
+from torchvision.models.swin_transformer import SwinTransformer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

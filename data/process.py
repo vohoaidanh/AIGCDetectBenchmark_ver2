@@ -158,7 +158,9 @@ def get_processing_model(opt):
         opt.dct_var = torch.load('./weights/auxiliary/dct_var').permute(1,2,0).numpy()
     
 
-    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest','Resnet_Attention']:
+    elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",
+                               'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest',
+                               'Resnet_Attention','Resnet_Multiscale', 'SwinTransformer']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -257,7 +259,7 @@ def processing_Resnet_Multiscale(img, opt, name):
             transforms.Normalize(mean=MEAN[name], std=STD[name]),
         ])
     
-    trans = [create_transform(name, opt, resize) for resize in [1, 5, 11]]
+    trans = [create_transform(name, opt, resize) for resize in [4, 8, 16, 32, 64, 128, 256]]
     transformed_images = [t(img) for t in trans]
     stacked_images = torch.cat(transformed_images, dim=0)
     return stacked_images
