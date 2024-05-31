@@ -31,3 +31,6 @@ if __name__ == '__main__':
     model = swin_transformer_model(pretrained=True, num_classes=1)
     input_tensor = torch.rand((2,3,224,224))
     model(input_tensor)
+
+    sum(p.numel() for p in model.parameters())
+

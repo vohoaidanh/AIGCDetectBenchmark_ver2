@@ -156,6 +156,25 @@ if __name__ == '__main__':
         val_writer.add_scalar('ap', ap, model.total_steps)
         print("(Val @ epoch {}) acc: {}; ap: {}; TPR: {}; TNR: {}".format(epoch, acc, ap, TPR, TNR))
         
+        if opt.comet:
+            experiment.log_metric('val/epoch_acc', acc, epoch=epoch)
+            experiment.log_metric('val/TPR', TPR, epoch=epoch)
+            experiment.log_metric('val/TNR', TNR, epoch=epoch)
+            file_name = "epoch_{}_val_{}.json".format(epoch, comet_train_params['name'])
+            experiment.log_confusion_matrix(matrix = val_conf_mat, file_name=file_name, epoch=epoch)
+
+        early_stopping(acc, model)
+        if early_stopping.early_stop:
+            cont_train = model.adjust_learning_rate()
+            if cont_train:
+                print("Learning rate dropped by 10, continue training...")
+                early_stopping = EarlyStopping(patience=opt.earlystop_epoch, delta=-0.002, verbose=True)
+            else:
+                print("Early stopping.")
+                if opt.comet:
+                    experiment.end()
+                break
+        
         ################################################################################################
         #evaluation on testset
         if opt.eval:
@@ -190,24 +209,6 @@ if __name__ == '__main__':
 
         ################################################################################################
         
-        if opt.comet:
-            experiment.log_metric('val/epoch_acc', acc, epoch=epoch)
-            experiment.log_metric('val/TPR', TPR, epoch=epoch)
-            experiment.log_metric('val/TNR', TNR, epoch=epoch)
-            file_name = "epoch_{}_val_{}.json".format(epoch, comet_train_params['name'])
-            experiment.log_confusion_matrix(matrix = val_conf_mat, file_name=file_name, epoch=epoch)
-
-        early_stopping(acc, model)
-        if early_stopping.early_stop:
-            cont_train = model.adjust_learning_rate()
-            if cont_train:
-                print("Learning rate dropped by 10, continue training...")
-                early_stopping = EarlyStopping(patience=opt.earlystop_epoch, delta=-0.002, verbose=True)
-            else:
-                print("Early stopping.")
-                if opt.comet:
-                    experiment.end()
-                break
         model.train()
     if opt.comet:
         experiment.end()

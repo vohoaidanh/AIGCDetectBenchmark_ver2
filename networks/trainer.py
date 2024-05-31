@@ -40,6 +40,8 @@ class Trainer(BaseModel):
             else:
                 params = self.model.parameters()
             
+            params = [p for p in params if p.requires_grad]
+            
             if opt.optim == 'adam':
                 if self.opt.detect_method == "UnivFD":
                     self.optimizer = torch.optim.AdamW(params, lr=opt.lr, betas=(opt.beta1, 0.999), weight_decay=opt.weight_decay)

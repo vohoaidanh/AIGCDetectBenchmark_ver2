@@ -29,6 +29,7 @@ from networks.cnn_simplest import cnn_simpest
 from networks.resnet_metric import resnet_metric
 from networks.resnet_attention import resnet_attention
 from networks.resnet_multiscale import resnet50_multiscale
+from networks.resnet_new import resnet_new
 
 def set_random_seed(seed=42):
     torch.manual_seed(seed)
@@ -164,6 +165,10 @@ def get_model(opt):
     
     elif opt.detect_method == "SwinTransformer":
         model = swin_transformer_model(pretrained=True, num_classes=1)
+        return model
+    
+    elif opt.detect_method == "Resnet_New":
+        model = resnet_new(pretrained=True, num_classes=1)
         return model
     
     

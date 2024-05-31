@@ -1,13 +1,14 @@
+import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101','resnet152']
+__all__ = ['resnet_new']
 
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet50': r"D:\K32\do_an_tot_nghiep\data\CNNSpot_1isreal_model_epoch_best.pth",
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
@@ -160,66 +161,62 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         # print("2"+str(x.size()))
-        x = self.fc(x)
+        #x = self.fc(x)
         # print("3"+str(x.size()))
         return x
 
-
-def resnet18(pretrained=False, **kwargs):
-    """Constructs a ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
-    return model
+class Resnet_New(nn.Module):
+    def __init__(self, in_channels=2048, out_channels=1):
+        super(Resnet_New, self).__init__()
+        
+        self.resnet = ResNet(Bottleneck, [3, 4, 6, 3], num_classes=1)
+        self.linear = nn.Linear(in_channels, out_channels)
 
 
-def resnet34(pretrained=False, **kwargs):
-    """Constructs a ResNet-34 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
-    return model
+    def forward(self, x):
+        with torch.no_grad():
+            fc = self.resnet.fc.weight.data
+            fc[fc<0.0] = 0.0
+        x = self.resnet(x)
+        x = x * fc
+        #print('x = ', x.shape)
+        #print('fc = ', fc.shape)
 
-
-def resnet50(pretrained=False, **kwargs):
+        return self.linear(x)
+    
+def resnet_new(pretrained=True, num_classes=1):
     """Constructs a ResNet-50 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = Resnet_New()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        print('loading pre-trained weight at :' , model_urls['resnet50'])
+        state_dict = torch.load(model_urls['resnet50'],map_location=device)
+        model.resnet.load_state_dict(state_dict['model'])
+        
+       
+    for param in model.resnet.parameters():
+        param.requires_grad = False
+        
     return model
-
-
-def resnet101(pretrained=False, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
-    return model
-
-
-def resnet152(pretrained=False, **kwargs):
-    """Constructs a ResNet-152 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
-    return model
-
+    
 
 if __name__ == '__main__':
-    model = resnet50()
+    model = resnet_new()
+    model.eval()
+    
+    intensor = torch.rand((2,3,224,224))
+    
+    model(intensor)
+
     sum(p.numel() for p in model.parameters())
+
+
+
+
+
+
+

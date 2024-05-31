@@ -160,7 +160,7 @@ def get_processing_model(opt):
 
     elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",
                                'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest',
-                               'Resnet_Attention','Resnet_Multiscale', 'SwinTransformer']:
+                               'Resnet_Attention','Resnet_Multiscale', 'SwinTransformer','Resnet_New']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -221,7 +221,9 @@ def processing(img, opt, name):
                 transforms.ToTensor(),
                 transforms.Normalize(mean=MEAN[name], std=STD[name]),
                 ])
-    return trans(img)
+    tensor  = trans(img)
+    #tensor = torch.cat([tensor[0:1, :, :]] * 3, dim=0) 
+    return tensor
 
 
 def processing_Resnet_Multiscale(img, opt, name):
@@ -666,8 +668,8 @@ if __name__ == '__main__':
     
     img = Image.open(r'D:/K32/do_an_tot_nghiep/AIGCDetectBenchmark/images/dog.jpg')
     
-    trans = processing_Resnet_Multiscale(img, opt, 'imagenet')
-
+    trans = processing(img, opt, 'imagenet')
+    trans
 
     a = np.asarray(trans[:3,:,:])
     a = a.transpose((1,2,0))

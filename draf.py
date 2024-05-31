@@ -1,11 +1,20 @@
 from networks.resnet import resnet50, resnet18
-
+import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 
 from PIL import Image
 
 model = resnet50(num_classes=1)
+
+
+fc_weights = model.fc.weight.data
+
+fc_weights = fc_weights.numpy()
+fc_weights = fc_weights.T
+fc_weights[fc_weights<0.0] = 0.0
+plt.plot(fc_weights)
+
 layer = list(model.children())
 features = torch.nn.Sequential(*list(model.children())[:6])
 
@@ -240,11 +249,11 @@ w, h = image.size
 image  = np.asarray(image)
 
 liquified_image = copy.deepcopy(image)
-for i in range(np.random.randint(10,15)):
+for i in range(np.random.randint(4,6)):
    x = np.random.randint(0,w)
    y = np.random.randint(0,h)
-   strength = np.random.randint(1,3)
-   radius = np.random.randint(30,100)
+   strength = np.random.randint(5,10)
+   radius = np.random.randint(w//3,w//2)
    liquified_image = swirl(liquified_image, rotation=0, strength=strength, radius=radius, center=(x,y))
 
     
@@ -544,33 +553,204 @@ for i in tqdm(range(len(dataset))):
     image.save(os.path.join(new_dir, img_name))
 
 
+import torch
+from einops import rearrange
 
 
-img = np.random.random_integers(0,255,(3,3))
-img1 = Image.fromarray(img)
-img2 = img1.resize((2,2),Image.BICUBIC)
-img3 = np.asarray(img2)
+# Tạo một tensor PyTorch có hình dạng (2, 3, 4)
+a = torch.randn(2, 12)
 
-
-
-
-
-from torchvision.models.swin_transformer import SwinTransformer
+# Thay đổi hình dạng tensor bằng rearrange
+b = rearrange(a, 'x (y z) -> x y z', y=2, z=6)
 
 
 
+import torch
+
+# Create a 3x3 tensor
+output = torch.rand((3,2,2))
+output = torch.mean(output, dim=0).unsqueeze(0)
+
+
+# Reshape it to add a batch dimension (to match the typical usage in deep learning)
+output = output.unsqueeze(0)  # Shape: (1, 3, 3)
+
+# Define window_size
+window_size = 4
+
+# Roll the tensor
+rolled_output = torch.roll(output, shifts=(1,1), dims=(1, 2))
+
+print(rolled_output)
 
 
 
 
+# Assuming your tensor is named 'tensor'
+tensor = torch.randn(3, 5, 5)  # Example random tensor
+
+# Extract the first channel
+first_channel = tensor[0:1, :, :]
+
+# Extend the first channel to create a new tensor with all channels having similar values
+extended_tensor = torch.cat([first_channel] * 3, dim=0)
+
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Hàm chia ảnh thành các mảnh nhỏ (patches)
+def split_and_reconstruct_image(image, grid_size = 4):
+
+    img_width, img_height = image.size
+    rows, cols = grid_size, grid_size
+    patch_width = img_width // cols
+    patch_height = img_height // rows
+    patches = []
+
+    for row in range(rows):
+        for col in range(cols):
+            left = col * patch_width
+            upper = row * patch_height
+            right = left + patch_width
+            lower = upper + patch_height
+            box = (left, upper, right, lower)
+            patch = image.crop(box)
+            patches.append(patch)
+    
+    new_order = np.random.permutation(len(patches))  # Thay đổi thứ tự sắp xếp nếu bạn muốn
+
+    rows = []
+    for i in range(0, len(new_order), grid_size):
+        row_patches = [patches[idx] for idx in new_order[i:i + grid_size]]
+        row = np.hstack([np.asarray(patch) for patch in row_patches])
+        rows.append(row)
+    new_image_array = np.vstack(rows)
+    return Image.fromarray(new_image_array)
 
 
 
+# Đọc ảnh
+image_path = r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\0_real\000609935.jpg"# Thay bằng đường dẫn tới ảnh của bạn
+image = Image.open(image_path).convert('RGB')
+
+a = split_and_reconstruct_image(image, 64)
 
 
 
+image256 = image.quantize(64).convert('RGB')
+image256 = image256.convert('RGB')
+image256 = image256.convert('L')
+image256 = split_and_reconstruct_image(image256, 200)
+
+
+image3 = np.asarray(image, dtype='float32') - np.asarray(image256, dtype='float32')
+image3 = (image3 - np.min(image3))
+image3 = np.asarray(image3, dtype='uint8')
+
+fourier_transform = np.fft.fft2(image256)
+fourier_transform = np.fft.fftshift(fourier_transform)  # Dịch chuyển zero frequency component đến trung tâm
+magnitude_spectrum = np.log1p(fourier_transform)  # Áp dụng log(1 + x) để giữ giá trị dương
+magnitude_spectrum = (magnitude_spectrum - magnitude_spectrum.min()) / (magnitude_spectrum.max() - magnitude_spectrum.min())  # Chuẩn hóa về phạm vi [0, 1]
+magnitude_spectrum = (magnitude_spectrum * 255).astype(np.uint8)  # Chuyển đổi về phạm vi [0, 255] và kiểu uint8
+
+
+# Hiển thị hình ảnh gốc và hình ảnh sau biến đổi Fourier
+plt.figure(figsize=(12, 6))
+
+plt.subplot(1, 2, 1)
+plt.title('Original Image')
+plt.imshow(image256, cmap='gray')
+plt.axis('off')
+
+plt.subplot(1, 2, 2)
+plt.title('Fourier Transform')
+plt.imshow(magnitude_spectrum, cmap='gray')
+plt.axis('off')
+
+plt.show()
+
+image3 = np.asarray(image3, dtype='uint8')
+Image.fromarray(image3)
+
+# Custom transformation to apply Fourier Transform to each channel of an RGB image
+class FourierTransform:
+    def __init__(self, radius=2):
+        self.radius = radius
+        
+    def __call__(self, img):
+        if isinstance(img, Image.Image):
+            img = transforms.functional.to_tensor(img)  # Convert PIL image to PyTorch tensor
+        
+        radius = self.radius
+        # Split the image into R, G, B channels
+        r_channel = img[0, :, :]
+        g_channel = img[1, :, :]
+        b_channel = img[2, :, :]
+
+        # Apply Fourier Transform to each channel
+        r_fourier = torch.fft.fftshift(torch.fft.fft2(r_channel))
+        g_fourier = torch.fft.fftshift(torch.fft.fft2(g_channel))
+        b_fourier = torch.fft.fftshift(torch.fft.fft2(b_channel))
+        
+        _, rows, cols = img.shape
+        crow, ccol = rows // 2, cols // 2  # Center of the image
+        
+        x, y = np.meshgrid(np.arange(cols), np.arange(rows))
+        center = cols//2
+        mask = np.zeros_like(r_channel)
+        mask[(x - center)**2 + (y - center)**2 >= radius**2] = 1.0
+        r_fourier = r_fourier * mask
+        g_fourier = g_fourier * mask
+        b_fourier = b_fourier * mask
+
+        r_img_back = np.fft.ifft2(r_fourier)
+        g_img_back = np.fft.ifft2(g_fourier)
+        b_img_back = np.fft.ifft2(b_fourier)
+        
+        img_back = torch.stack([torch.tensor(np.abs(r_img_back)), torch.tensor(np.abs(g_img_back)), torch.tensor(np.abs(b_img_back))])
+        img_back = img_back.permute(1,2,0).numpy()
+        img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX)
+        img_back = img_back.astype('uint8')
+
+        return Image.fromarray(img_back)
+
+# Define the transformations
+fourie_fc = FourierTransform(100.0)
+
+fc = transforms.Lambda(lambda img: fourie_fc(img))
+
+
+transform = transforms.Compose([
+    transforms.Resize(5),
+    transforms.Resize((256, 256)),
+    #fc,
+    #transforms.ToTensor(),
+    #FourierTransform(),
+])
+
+t = transform(image)
+
+t
+float(4)
+plt.imshow(t.permute((1,2,0)))
+
+t.max()
 
 
 
+x, y = np.meshgrid(np.arange(20), np.arange(20))
+center = 10
+radius = 5
+mask = np.zeros((20, 20))
+mask[(x - center)**2 + (y - center)**2 >= radius**2] = 1
+import cv2
 
 
+img_filtered_pil = t.permute(1,2,0).numpy()
+img_filtered_scaled = cv2.normalize(img_filtered_pil, None, 0, 255, cv2.NORM_MINMAX)
+img_filtered_scaled = img_filtered_scaled.astype('uint8')
+
+img_filtered_scaled = Image.fromarray(img_filtered_scaled)
+
+import numpy as np
