@@ -20,10 +20,15 @@ import imageio
 from skimage.transform import resize
 from .process import *
 import copy
+import random
+
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 #Mean: tensor([0.4961, 0.4607, 0.4350])
 #Std: tensor([0.2461, 0.2345, 0.2351])
+Extension = ('jpg', 'png', 'jpeg', 'webp', 'tif', 'jpeg')   
+Extension = Extension + tuple([i.upper() for i in Extension])
 
 def dataset_folder(opt, root):
     if opt.mode == 'binary':
@@ -482,7 +487,53 @@ class read_data_cam():
         else:
             return len(self.real_img_list)
     
-Extension = ('jpg', 'png', 'jpeg', 'webp', 'tif')   
+
+class read_data_mask():
+    def __init__(self, opt):
+        self.opt = opt
+        self.root = opt.dataroot
+        real_img_list = loadpathslist(self.root,'0_real')
+        real_img_list = [i for i in real_img_list if i.endswith(Extension)]
+        
+        if opt.pos_label == '1_fake':
+            real_value, fake_value = 0, 1
+        else:
+            real_value, fake_value = 1, 0
+            
+        real_label_list = [real_value for _ in range(len(real_img_list))]
+        fake_img_list = loadpathslist(self.root,'1_fake')
+        fake_img_list = [i for i in fake_img_list if i.endswith(Extension)]
+
+        fake_label_list = [fake_value for _ in range(len(fake_img_list))]
+        self.img = real_img_list+fake_img_list
+        self.label = real_label_list+fake_label_list
+
+        # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
+
+    def __getitem__(self, index):
+        img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
+        imgname = self.img[index]
+        
+        bg_idx = random.choice(real_img_list)
+        background = Image.open(self.img[index]).convert('RGB')
+        
+        # compute scaling
+      #  height, width = img.height, img.width
+        
+      #  if (not self.opt.isTrain) and (not self.opt.isVal):
+      #      img = custom_augment(img, self.opt)
+      
+      
+        if self.opt.detect_method in ['Resnet_Mask']:
+            img = processing_mask(img, background, self.opt, 'imagenet')
+        else:
+            raise ValueError(f"Unsupported model_type: {self.opt.detect_method}")
+
+        return img, target
+
+    def __len__(self):
+        return len(self.label)
+
 class read_data():
     def __init__(self, opt):
         self.opt = opt
@@ -574,6 +625,14 @@ def read_data_new(opt):
         
     if 'cnnspot_cam' in opt.detect_method.lower():
         return read_data_cam(opt)
+    
+    if 'resnet_mask' in opt.detect_method.lower():
+        return read_data_mask(opt)
+    
     else:
         return read_data(opt)
+    
+    
+    
+    
     

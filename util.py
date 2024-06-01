@@ -94,7 +94,7 @@ def create_argparser():
     return parser
 
 def get_model(opt):
-    if opt.detect_method in ["CNNSpot","LNP","LGrad","DIRE", "Derivative", "CNNSpot_Noise"]:
+    if opt.detect_method in ["CNNSpot","LNP","LGrad","DIRE", "Derivative", "CNNSpot_Noise", "Resnet_Mask"]:
         if opt.isTrain:
             model = resnet50(pretrained=True)
             model.fc = nn.Linear(2048, 1)

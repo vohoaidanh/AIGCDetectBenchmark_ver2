@@ -226,6 +226,74 @@ def processing(img, opt, name):
     return tensor
 
 
+##################################################
+def _paste_img(img1, img2):
+    # Giả sử cả hai ảnh đều là ảnh PIL
+    width, height = img2.size
+
+    # Tạo ngẫu nhiên vị trí để paste img1 vào img2
+    paste_width, paste_height = img1.size
+    left = np.random.randint(0, width - paste_width)
+    top = np.random.randint(0, height - paste_height)
+    
+    # Dán img1 lên img2
+    img2.paste(img1, (left, top))
+
+    return img2
+
+class CustomTransform:
+    def __init__(self, img1):
+        self.img1 = img1
+    
+    def __call__(self, img2):
+        return _paste_img(self.img1, img2)
+##################################################
+def processing_mask(img, background, opt, name):
+    #Crop a small region from image 1 and paste into background image
+    if opt.isTrain:
+        crop_func = transforms.RandomCrop(opt.CropSize)
+        #color_func = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+    elif opt.no_crop:
+        crop_func = transforms.Lambda(lambda img: img)
+    else:
+        crop_func = transforms.CenterCrop(opt.CropSize)
+
+    if opt.isTrain and not opt.no_flip:
+        flip_func = transforms.RandomHorizontalFlip()
+    else:
+        flip_func = transforms.Lambda(lambda img: img)
+    if not opt.isTrain and opt.no_resize:
+        rz_func = transforms.Lambda(lambda img: img)
+    else:
+        rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+        
+    trans = transforms.Compose([
+                rz_func,
+                transforms.RandomCrop(opt.loadSize//2),
+                #transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
+                #crop_func,
+                flip_func,
+                #transforms.ToTensor(),
+                #transforms.Normalize(mean=MEAN[name], std=STD[name]),
+                ])
+    
+    crop = trans(img)
+    custom_transform = CustomTransform(crop)
+
+    trans_bg = transforms.Compose([
+                rz_func,
+                #transforms.Lambda(lambda img: data_augment(img, opt) if (opt.isTrain or opt.isVal) else img),
+                crop_func,
+                flip_func,
+                custom_transform,
+                transforms.ToTensor(),
+                transforms.Normalize(mean=MEAN[name], std=STD[name]),
+                ])
+    
+    tensor  = trans_bg(background)
+    return tensor
+
+
 def processing_Resnet_Multiscale(img, opt, name):
     
     #brightness = (0.8, 1.2)  # Randomly change brightness by a factor of 0.8 to 1.2
@@ -663,13 +731,15 @@ if __name__ == '__main__':
     opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.val_split)
     opt.batch_size = 1
     opt.method_combine = None#'CNNSpot+FreDect'
-    opt.detect_method = 'Resnet_Metric'
+    opt.detect_method = 'Resnet_Mask'
     opt.isTrain
     
-    img = Image.open(r'D:/K32/do_an_tot_nghiep/AIGCDetectBenchmark/images/dog.jpg')
+    background = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\0_real\000610946.jpg").convert("RGB")
+    img = Image.open(r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\val\1_fake\12eeac8f-89ca-4667-bf4c-da13aa3ba72a.jpg").convert("RGB")
+
     
-    trans = processing(img, opt, 'imagenet')
-    trans
+    trans = processing_mask(img, background, opt, 'imagenet')
+    
 
     a = np.asarray(trans[:3,:,:])
     a = a.transpose((1,2,0))
@@ -679,10 +749,6 @@ if __name__ == '__main__':
 
 
     
-
-
-    
-
 
 
 
