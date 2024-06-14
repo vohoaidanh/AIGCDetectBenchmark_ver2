@@ -34,3 +34,9 @@ if __name__ == '__main__':
 
     sum(p.numel() for p in model.parameters())
 
+
+
+
+
+
+

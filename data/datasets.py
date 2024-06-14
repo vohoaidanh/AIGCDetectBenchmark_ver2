@@ -507,6 +507,7 @@ class read_data_mask():
         fake_label_list = [fake_value for _ in range(len(fake_img_list))]
         self.img = real_img_list+fake_img_list
         self.label = real_label_list+fake_label_list
+        self.real_list = real_img_list
 
         # print('directory, realimg, fakeimg:', self.root, len(real_img_list), len(fake_img_list))
 
@@ -514,8 +515,8 @@ class read_data_mask():
         img, target = Image.open(self.img[index]).convert('RGB'), self.label[index]
         imgname = self.img[index]
         
-        bg_idx = random.choice(real_img_list)
-        background = Image.open(self.img[index]).convert('RGB')
+        bg_img_path = random.choice(self.real_list)
+        background = Image.open(bg_img_path).convert('RGB')
         
         # compute scaling
       #  height, width = img.height, img.width

@@ -28,6 +28,68 @@ from preprocessing_model.guided_diffusion.script_util import (
 )
 
 
+class FourierTransform(nn.Module):
+    def __init__(self, cutoff=[0.0, 1.0]):
+        super(FourierTransform, self).__init__()
+        self.cutoff = cutoff
+        self.shape = None
+        self.mask = None
+
+    def forward(self, img):
+
+        if self.shape != img.shape:
+            self.shape =  img.shape
+            self.mask = self.create_filter(self.shape, self.cutoff)
+    
+        # Apply Fourier Transform
+        img_fft = torch.fft.fft2(img)
+        img_fft_shifted = torch.fft.fftshift(img_fft)
+        
+        # Compute Magnitude and Phase
+        magnitude = torch.abs(img_fft_shifted)
+        phase = torch.angle(img_fft_shifted)
+        
+        #magnitude[:] = magnitude.mean()
+         
+        # Combine Magnitude and Phase back to the complex form
+        img_fft_shifted = torch.polar(magnitude, phase)
+        
+        # Optionally apply a low-pass filter
+
+        img_fft_shifted = img_fft_shifted * self.mask
+        
+        # Apply Inverse Fourier Transform
+        img_fft_shifted = torch.fft.ifftshift(img_fft_shifted)
+        img_ifft = torch.fft.ifft2(img_fft_shifted)
+        
+        # Take the real part of the inverse FFT result
+        img_processed = torch.real(img_ifft)
+        return img_processed
+    
+    def create_filter(self, shape, cutoff=[0.0, 1.0]):
+        # Create a low-pass filter mask
+        rows, cols = shape[-2], shape[-1]
+        crow, ccol = rows // 2 , cols // 2  # center
+        
+        # Create a circular low-pass filter mask
+        y, x = torch.meshgrid(torch.arange(rows), torch.arange(cols), indexing='ij')
+
+        
+        r1 = int(cutoff[0] * min(crow, ccol))
+        r2 = int(cutoff[1] * min(crow, ccol))
+        assert r1 < r2, "r1 must be less than r2"
+        
+        mask1 = ((y - crow) ** 2 + (x - ccol) ** 2) >= r1 ** 2
+        mask2 = ((y - crow) ** 2 + (x - ccol) ** 2) <= r2 ** 2
+        mask = mask1 & mask2
+
+        mask = mask.float()
+        
+        return mask
+        
+###############################################################################
+
+
 def data_augment(img, opt):
     img = np.array(img)
 
@@ -160,7 +222,7 @@ def get_processing_model(opt):
 
     elif opt.detect_method in ['CNNSpot','Gram','Steg','Fusing',"UnivFD", "Combine",
                                'Derivative','CNNSpot_Noise', 'CNNSpot_CAM', 'CNNSimpest',
-                               'Resnet_Attention','Resnet_Multiscale', 'SwinTransformer','Resnet_New']:
+                               'Resnet_Attention','Resnet_Multiscale', 'SwinTransformer','Resnet_New', 'Resnet_Mask']:
         opt=opt
     else:
         raise ValueError(f"Unsupported model_type: {opt.detect_method}")
@@ -477,17 +539,17 @@ def processing_DER(img, opt, name):
 
 
 MEAN = {
-    #"imagenet":[0.485, 0.456, 0.406],
+    "imagenet":[0.485, 0.456, 0.406],
     "clip":[0.48145466, 0.4578275, 0.40821073],
     #Mean: tensor([0.4961, 0.4607, 0.4350])
     #Std: tensor([0.2461, 0.2345, 0.2351])
-    "imagenet":[0.4961, 0.4607, 0.4350],
+    #"imagenet":[0.4961, 0.4607, 0.4350],
 }
 
 STD = {
-    #"imagenet":[0.229, 0.224, 0.225],
+    "imagenet":[0.229, 0.224, 0.225],
     "clip":[0.26862954, 0.26130258, 0.27577711],
-    "imagenet":[0.2461, 0.2345, 0.2351],
+    #"imagenet":[0.2461, 0.2345, 0.2351],
 }
 
 

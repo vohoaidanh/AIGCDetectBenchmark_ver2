@@ -672,48 +672,50 @@ plt.show()
 
 image3 = np.asarray(image3, dtype='uint8')
 Image.fromarray(image3)
-
-# Custom transformation to apply Fourier Transform to each channel of an RGB image
-class FourierTransform:
-    def __init__(self, radius=2):
-        self.radius = radius
-        
-    def __call__(self, img):
-        if isinstance(img, Image.Image):
-            img = transforms.functional.to_tensor(img)  # Convert PIL image to PyTorch tensor
-        
-        radius = self.radius
-        # Split the image into R, G, B channels
-        r_channel = img[0, :, :]
-        g_channel = img[1, :, :]
-        b_channel = img[2, :, :]
-
-        # Apply Fourier Transform to each channel
-        r_fourier = torch.fft.fftshift(torch.fft.fft2(r_channel))
-        g_fourier = torch.fft.fftshift(torch.fft.fft2(g_channel))
-        b_fourier = torch.fft.fftshift(torch.fft.fft2(b_channel))
-        
-        _, rows, cols = img.shape
-        crow, ccol = rows // 2, cols // 2  # Center of the image
-        
-        x, y = np.meshgrid(np.arange(cols), np.arange(rows))
-        center = cols//2
-        mask = np.zeros_like(r_channel)
-        mask[(x - center)**2 + (y - center)**2 >= radius**2] = 1.0
-        r_fourier = r_fourier * mask
-        g_fourier = g_fourier * mask
-        b_fourier = b_fourier * mask
-
-        r_img_back = np.fft.ifft2(r_fourier)
-        g_img_back = np.fft.ifft2(g_fourier)
-        b_img_back = np.fft.ifft2(b_fourier)
-        
-        img_back = torch.stack([torch.tensor(np.abs(r_img_back)), torch.tensor(np.abs(g_img_back)), torch.tensor(np.abs(b_img_back))])
-        img_back = img_back.permute(1,2,0).numpy()
-        img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX)
-        img_back = img_back.astype('uint8')
-
-        return Image.fromarray(img_back)
+# =============================================================================
+# 
+# # Custom transformation to apply Fourier Transform to each channel of an RGB image
+# class FourierTransform:
+#     def __init__(self, radius=2):
+#         self.radius = radius
+#         
+#     def __call__(self, img):
+#         if isinstance(img, Image.Image):
+#             img = transforms.functional.to_tensor(img)  # Convert PIL image to PyTorch tensor
+#         
+#         radius = self.radius
+#         # Split the image into R, G, B channels
+#         r_channel = img[0, :, :]
+#         g_channel = img[1, :, :]
+#         b_channel = img[2, :, :]
+# 
+#         # Apply Fourier Transform to each channel
+#         r_fourier = torch.fft.fftshift(torch.fft.fft2(r_channel))
+#         g_fourier = torch.fft.fftshift(torch.fft.fft2(g_channel))
+#         b_fourier = torch.fft.fftshift(torch.fft.fft2(b_channel))
+#         
+#         _, rows, cols = img.shape
+#         crow, ccol = rows // 2, cols // 2  # Center of the image
+#         
+#         x, y = np.meshgrid(np.arange(cols), np.arange(rows))
+#         center = cols//2
+#         mask = np.zeros_like(r_channel)
+#         mask[(x - center)**2 + (y - center)**2 >= radius**2] = 1.0
+#         r_fourier = r_fourier * mask
+#         g_fourier = g_fourier * mask
+#         b_fourier = b_fourier * mask
+# 
+#         r_img_back = np.fft.ifft2(r_fourier)
+#         g_img_back = np.fft.ifft2(g_fourier)
+#         b_img_back = np.fft.ifft2(b_fourier)
+#         
+#         img_back = torch.stack([torch.tensor(np.abs(r_img_back)), torch.tensor(np.abs(g_img_back)), torch.tensor(np.abs(b_img_back))])
+#         img_back = img_back.permute(1,2,0).numpy()
+#         img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX)
+#         img_back = img_back.astype('uint8')
+# 
+#         return Image.fromarray(img_back)
+# =============================================================================
 
 # Define the transformations
 fourie_fc = FourierTransform(100.0)
@@ -754,3 +756,181 @@ img_filtered_scaled = img_filtered_scaled.astype('uint8')
 img_filtered_scaled = Image.fromarray(img_filtered_scaled)
 
 import numpy as np
+
+input = torch.randn(1, 1, 2, 2)
+downsample = nn.Conv2d(1, 1, 2, stride=2, padding=1)
+upsample = nn.ConvTranspose2d(1, 1, 4, stride=8, padding=1)
+h = upsample(input)
+h.size()
+
+
+
+
+torch.pow(torch.tensor(3),2)
+
+
+
+torch.clamp(torch.tensor(3.2), min=0.0)
+torch.sqrt(torch.tensor(2.0))
+
+import pickle 
+
+file_path = r"C:\Users\danhv\Downloads\labels.pkl"
+
+# Open the file in binary read mode and load the data
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+
+
+gt = data['all_labels']
+pre = data['all_preds']
+
+gt = np.asanyarray(gt, dtype='float32')
+pre = np.asanyarray(pre, dtype='float32')
+
+diff = gt==pre
+
+
+y = np.ones(10), np.ones(10)
+
+y = np.concatenate(y)
+
+
+
+import numpy as np
+from scipy.fft import fft2, ifft2, fftshift, ifft2, fftfreq, ifftshift
+import matplotlib.pyplot as plt
+from PIL import Image
+
+def create_low_pass_filter_mask(shape, radius):
+    """Create a circular low-pass filter mask with given radius."""
+    rows, cols = shape
+    crow, ccol = rows // 2, cols // 2  # Center of the image
+    mask = np.zeros((rows, cols), dtype=np.float32)
+    y, x = np.ogrid[:rows, :cols]
+    center = (y - crow)**2 + (x - ccol)**2
+    mask[center <= radius**2] = 1
+    return mask
+
+# Load and normalize image
+image_path = 'images/dog.jpg'
+image_path2 = r"D:\K32\do_an_tot_nghiep\data\real_gen_dataset\train\1_fake\0de9795d-b5d1-4dc6-976f-3677e18cbe19.jpg"
+image = Image.open(image_path).convert('L')  # Convert to grayscale
+image2 = Image.open(image_path2).convert('L')  # Convert to grayscale
+image2 = image2.resize(image.size)
+image_array = np.array(image, dtype=np.float32)
+image_array2 = np.array(image2, dtype=np.float32)
+
+# Normalize the image to range [0, 1]
+image_normalized = image_array / 255.0
+image_normalized2 = image_array2 / 255.0
+
+# Apply 2D FFT
+transformed_image = fft2(image_normalized)
+transformed_image_shifted = fftshift(transformed_image)
+phase_spectrum = np.angle(transformed_image_shifted)
+magnitude_spectrum = np.abs(transformed_image_shifted)
+
+# Apply 2D FFT
+transformed_image2 = fft2(image_normalized2)
+transformed_image_shifted2 = fftshift(transformed_image2)
+phase_spectrum2 = np.angle(transformed_image_shifted2)
+magnitude_spectrum2 = np.abs(transformed_image_shifted2)
+
+
+plt.imshow(phase_spectrum, cmap='gray')
+plt.imshow(np.log(magnitude_spectrum+1e-9), cmap='gray')
+
+#r = np.random.uniform(np.min(magnitude_spectrum), np.max(magnitude_spectrum), magnitude_spectrum.shape)
+r  = np.mean(magnitude_spectrum)
+#reconstructed_fft_image_shifted = r * np.exp(1j * phase_spectrum)
+reconstructed_fft_image_shifted = magnitude_spectrum * np.exp(1j * 1.0)
+transformed_image_invert = ifft2(ifftshift(reconstructed_fft_image_shifted))
+plt.imshow(transformed_image_invert.real, cmap='gray')
+
+row, col = transformed_image_shifted.shape
+mask = create_low_pass_filter_mask(transformed_image_shifted.shape, 30.0)
+
+transformed_image_shifted = transformed_image_shifted*(mask)
+
+plt.imshow(np.log(np.abs(((1-mask).T + 1e-9))), cmap='gray')
+
+plt.imshow(np.log(np.abs(transformed_image_invert) + 0.001), cmap='gray')
+
+plt.imshow(magnitude_spectrum2, cmap='gray')
+
+
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from data.process import *
+from PIL import Image
+
+# =============================================================================
+# # Đọc hình ảnh và chuyển đổi sang không gian màu LAB
+# image = cv2.imread('images/dog.jpg')
+# image_lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+# 
+# # Tách các kênh L, A, B
+# L, A, B = cv2.split(image_lab)
+# #L = np.random.randint(112,208,A.shape, dtype=np.uint8)
+# L = np.ones_like(L)*180
+# # Áp dụng khử nhiễu chỉ trên kênh L
+# L_denoised = cv2.fastNlMeansDenoising(L, None, 30, 7, 21)
+# # Kết hợp lại các kênh LAB
+# image_lab_denoised = cv2.merge((L, A, B))
+# 
+# # Chuyển đổi trở lại không gian màu BGR
+# image_denoised = cv2.cvtColor(image_lab_denoised, cv2.COLOR_LAB2BGR)
+# 
+# # Hiển thị hình ảnh trước và sau khi khử nhiễu
+# plt.figure(figsize=(10, 5))
+# plt.subplot(1, 2, 1)
+# plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+# plt.title('Original Image')
+# plt.axis('off')
+# 
+# plt.subplot(1, 2, 2)
+# plt.imshow(cv2.cvtColor(image_denoised, cv2.COLOR_BGR2RGB))
+# plt.title('Denoised Image')
+# plt.axis('off')
+# 
+# plt.show()
+# 
+# 
+# plt.imshow(L, cmap='gray')
+# np.max(L)
+# 
+# =============================================================================
+
+if __name__ == '__main__':
+    ft = FourierTransform(filter_='highpass', cutoff=0.5)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ft,
+        transforms.Normalize(mean=[0, 0, 0], std=[0.5, 0.5, 0.5]),
+        #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        #transforms.ToTensor(),
+        
+    ])
+        
+    
+    im = Image.open('images/dog.jpg')
+
+    im_transformed = transform(im)
+
+    im_transformed = im_transformed.permute((1,2,0))
+    
+    plt.imshow(im_transformed*200.0)    
+
+im_transformed.min()
+
+a = torch.rand((5,3,5))
+
+
+a[:] = 2.0
+
+
+

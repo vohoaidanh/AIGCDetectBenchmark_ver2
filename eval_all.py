@@ -87,7 +87,7 @@ for v_id, val in enumerate(vals):
     model.eval()
 
 
-    opt.process_device = torch.device("cpu")
+    #opt.process_device = torch.device("cpu")
 
     acc, ap, conf_mat  = validate(model, opt)[:3]
     rows.append([val, acc, ap, conf_mat])    

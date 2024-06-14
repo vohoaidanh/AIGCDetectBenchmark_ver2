@@ -1,0 +1,13 @@
+import gdown
+
+# Google Drive file ID
+#https://drive.google.com/file/d/1bRoQiBDlBo1tkpmYJNzxuwwFgxVkGAUj/view?usp=drive_link
+file_id = '1bRoQiBDlBo1tkpmYJNzxuwwFgxVkGAUj'
+destination = '/workspace/real_gen_dataset.zip'  # Desired file name and extension
+
+# Construct the download URL
+url = f'https://drive.google.com/uc?id={file_id}'
+
+# Download the file
+gdown.download(url, destination, quiet=False)
+

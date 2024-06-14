@@ -239,6 +239,14 @@ class Resnet_Metric(nn.Module):
         return parameters_to_update
     
 
+    
+    def get_parameters_to_optimize(self, target_model_names = ['encoder', 'projector']):
+        parameters_to_update = []
+        for name, param in self.named_parameters():
+            if any(target_model_name in name for target_model_name in target_model_names):
+                parameters_to_update.append(param)
+        return parameters_to_update
+
 def resnet_metric(pretrained = False):
     model = Resnet_Metric()
     if pretrained:
@@ -274,6 +282,7 @@ if __name__ == '__main__':
     ])
     
     x = transform(img)
+    x = x.unsqueeze(0)
     out = model(x)
     print(out)
    
