@@ -14,6 +14,9 @@ import numpy as np
 from data.datasets import read_data_new
 from tqdm import tqdm
 import torch.utils.model_zoo as model_zoo
+from eval_config import *
+from util import create_argparser,get_model, set_random_seed
+from validate import validate,validate_single
 
 ###############################################################
 model_urls = {
@@ -186,6 +189,7 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 ################################################################
+"""
 def get_model(opt):
     if opt.detect_method in ["CNNSpot","LNP","LGrad","DIRE", "Derivative", "CNNSpot_Noise", "Resnet_Mask"]:
         if opt.isTrain:
@@ -196,12 +200,11 @@ def get_model(opt):
         else:
             return resnet50(num_classes=1)
 
-
+"""
 
 def validation(model,opt, mask = None):
     from sklearn.metrics import average_precision_score, accuracy_score, confusion_matrix
-    i = 0
-    opt = get_processing_model(opt) 
+    opt = get_processing_model(opt)
     data_loader = create_dataloader_new(opt)
     y_true, y_pred = [], []
     y_pred_ = []
@@ -209,12 +212,13 @@ def validation(model,opt, mask = None):
     if mask is not None:
         layer = model.layer4[2].relu  # Accessing 'layer4.2.relu_2'
         hook = layer.register_forward_hook(get_apply_mask_hook(mask))
-    
+    model.eval() 
+    i = 0
     with torch.no_grad():
         for img, label in tqdm(data_loader):
             i += 1
             #print("batch number {}/{}".format(i, len(data_loader)), end='\r')
-            in_tens = img#.cuda()
+            in_tens = img.cuda()
             y_pred.extend(model(in_tens).sigmoid().flatten().tolist())
             y_true.extend(label.flatten().tolist())
             
@@ -222,11 +226,13 @@ def validation(model,opt, mask = None):
 
     y_true, y_pred = np.array(y_true), np.array(y_pred)
     y_pred_ = np.array(y_pred_)
-    r_acc = accuracy_score(y_true[y_true == 0], y_pred[y_true == 0] > 0.8)
-    f_acc = accuracy_score(y_true[y_true == 1], y_pred[y_true == 1] > 0.8)
-    acc = accuracy_score(y_true, y_pred > 0.5)
+    r_acc = accuracy_score(y_true[y_true == 0], y_pred[y_true == 0] > 0.5)
+    f_acc = accuracy_score(y_true[y_true == 1], y_pred[y_true == 1] > 0.5)
+    acc = accuracy_score(y_true, y_pred_ > 8.5)
     ap = average_precision_score(y_true, y_pred>=0.5)
-    conf_mat = confusion_matrix(y_true, y_pred_>=15.0)
+    conf_mat = confusion_matrix(y_true, y_pred_>=15)
+    #conf_mat = confusion_matrix(y_true, y_pred > 0.5)
+
     if mask is not None:
         hook.remove()
     
@@ -257,7 +263,7 @@ def invert_convert(feature, r=2**6, c=2**5, kernel_size=7):
 def apply_mask(module, input, output, mask):
     if output.shape == torch.Size([32, 2048, 7, 7]):
         output = output * mask
-    print('output shape', output.shape)
+        #print('output shape', output.shape)
     return output
 
 # Định nghĩa một lớp đóng gói để truyền mask vào hook
@@ -289,7 +295,7 @@ def create_mask(model, opt, layer_name='layer4.2.relu_2'):
             else:
                 in_tens = img
 
-            # label = label.cuda()
+            label = label.cuda()
             output = feature_extractor(in_tens)
             output = convert(output['feature'])
             if label == 1:# Real Image
@@ -316,27 +322,26 @@ def create_mask(model, opt, layer_name='layer4.2.relu_2'):
 import pickle
 
 if __name__ == '__main__':
-        
-    dataroot = r'D:\K32\do_an_tot_nghiep\data\real_gen_dataset'.replace('\\','/')
-    val = 'val'
+    #dataroot = 'dataset/RealFakeDB512s'
+    #val = 'test'
+    """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     opt = TestOptions().parse(print_options=True) #获取参数类
     opt.batch_size = 1
     opt.detect_method = 'CNNSpot'
     opt.pos_label = '0_real'
     opt.isTrain = False
     opt.isVal = False
-    opt.pos_label = '0_real'
-    opt.model_path = r"D:\K32\do_an_tot_nghiep\data\CNNSpot_1isreal_model_epoch_best.pth".replace('\\', '/')
-    opt.dataroot = '{}/{}'.format(dataroot, val)
+    opt.model_path = 'weights/classifier/CNNSpot_1isreal_model_epoch_best.pth'
+    opt.dataroot = '{}/{}'.format(dataroot, vals[0])
     opt.process_device = device
     opt = get_processing_model(opt) 
     
     model = get_model(opt)
     state_dict = torch.load(opt.model_path, map_location='cpu')
     model.load_state_dict(state_dict['model'],strict=True)
-    
+    model.cuda()
+    model.eval()
     train_nodes, eval_nodes = get_graph_node_names(model)
     return_nodes = {
         # node_name: user-specified key for output dict
@@ -344,18 +349,38 @@ if __name__ == '__main__':
     }
     
     features = create_mask(model, opt)
-    MASK = features['mask']
+    
     
     with open('features.pkl', 'wb') as f:
         pickle.dump(features, f)
+    """
+    with open('features.pkl', 'rb') as f:
+      features = pickle.load(f)
+
+    MASK = features['mask']
     
     print(50*'=')
+
+    #result = validation(model=model, opt=opt, mask=None)
+    opt = TestOptions().parse(print_options=True) #获取参数类
+    opt.pos_label = '0_real'
     opt.batch_size = 32
-    mask = torch.zeros(MASK.shape)
-    result = validation(model=model, opt=opt, mask=(MASK))
+
+    for v_id, val in enumerate(vals):
+        opt.dataroot = '{}/{}'.format(dataroot, val)
+        opt.model_path = 'weights/classifier/CNNSpot_1isreal_model_epoch_best.pth'
+        model = get_model(opt)
+        state_dict = torch.load(opt.model_path, map_location='cpu')
+        model.load_state_dict(state_dict['model'],strict=True)
+        model.cuda()
+        model.eval() 
+        result = validation(model=model, opt=opt, mask=None)
+        #acc, ap, conf_mat  = validate(model, opt)[:3]
+
+    print('acc is ', result[0])
+    print(result[2])
     
-    
-    with open('result.pkl', 'wb') as f:
+    with open('result_no_mask.pkl', 'wb') as f:
         pickle.dump(result, f)
     
 
